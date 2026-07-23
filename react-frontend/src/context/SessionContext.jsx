@@ -5,6 +5,38 @@ const SessionContext = createContext();
 
 export const useSession = () => useContext(SessionContext);
 
+export const DEFAULT_DEMO_SESSION = {
+  session_id: 'demo-session-101',
+  atsScore: 87,
+  placementReadiness: 84,
+  resumeName: 'Shiva_Reddy_Resume.pdf',
+  extractedSkills: [
+    'React 18', 'JavaScript (ES6+)', 'TypeScript', 'Node.js', 'Express.js',
+    'Python', 'FastAPI', 'SQL & Database Schema', 'Git', 'RESTful APIs',
+    'HTML5/CSS3', 'Tailwind CSS'
+  ],
+  jobMatches: [
+    { id: 'job-1', company: 'Google Cloud', role: 'Frontend Engineer', score: 85, logo: '🌐' },
+    { id: 'job-2', company: 'Amazon AWS', role: 'Full Stack Engineer', score: 79, logo: '📦' },
+    { id: 'job-3', company: 'Microsoft Azure', role: 'Backend API Developer', score: 74, logo: '⚡' }
+  ],
+  skillGaps: [
+    { skill: 'System Design & Scalability', level: 'Critical', priority: 'High', interviewFreq: 'High' },
+    { skill: 'Docker & DevOps Pipelines', level: 'High', priority: 'High', interviewFreq: 'Medium' },
+    { skill: 'PostgreSQL Query Tuning', level: 'Medium', priority: 'Medium', interviewFreq: 'Medium' }
+  ],
+  learningRoadmap: {
+    roadmap_data: {
+      weeks: [
+        { week: 1, title: 'System Design Fundamentals', tasks: ['URL Shortener Architecture', 'Cache-Aside Pattern', 'Load Balancers'] },
+        { week: 2, title: 'Containerization & DevOps', tasks: ['Dockerfiles & Multi-stage Builds', 'Docker Compose Stack', 'CI/CD Pipelines'] },
+        { week: 3, title: 'Advanced Relational DBs', tasks: ['PostgreSQL B-Tree Indexing', 'EXPLAIN ANALYZE Plans', 'N+1 Query Resolution'] },
+        { week: 4, title: 'Mock Interviews & STAR Method', tasks: ['Behavioral STAR Answers', 'Technical DSA Review', 'System Design Mock'] }
+      ]
+    }
+  }
+};
+
 export const SessionProvider = ({ children }) => {
   // 1. User Profile state
   const [profile, setProfile] = useState(() => {

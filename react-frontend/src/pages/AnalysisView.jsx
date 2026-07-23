@@ -3,7 +3,7 @@ import { useSession, DEFAULT_DEMO_SESSION } from '../context/SessionContext';
 import { useNavigate } from 'react-router-dom';
 
 const AnalysisView = () => {
-  const { session, profile } = useSession();
+  const { session, profile, resetSession } = useSession();
   const navigate = useNavigate();
   const activeSession = session || DEFAULT_DEMO_SESSION;
   const [activeTab, setActiveTab] = useState('overview');
@@ -98,8 +98,30 @@ const AnalysisView = () => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <button
+            onClick={() => {
+              resetSession();
+              navigate('/');
+            }}
+            style={{
+              background: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+              color: '#ef4444',
+              borderRadius: '12px',
+              padding: '0.65rem 1.15rem',
+              fontSize: '0.85rem',
+              fontWeight: '800',
+              cursor: 'pointer'
+            }}
+          >
+            🔄 Reset Session
+          </button>
+
           <button 
-            onClick={() => navigate('/')}
+            onClick={() => {
+              resetSession();
+              navigate('/');
+            }}
             style={{
               background: '#ffffff',
               border: '1px solid #e2e8f0',
