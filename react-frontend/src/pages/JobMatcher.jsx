@@ -1,37 +1,10 @@
 import React, { useState } from 'react';
-import { useSession } from '../context/SessionContext';
+import { useSession, DEFAULT_DEMO_SESSION } from '../context/SessionContext';
 
 const JobMatcher = () => {
   const { session } = useSession();
+  const activeSession = session || DEFAULT_DEMO_SESSION;
   const [selectedJobId, setSelectedJobId] = useState('job-1');
-
-  if (!session) {
-    return (
-      <div style={{ padding: '2rem 0' }}>
-        <header style={{ marginBottom: '2.5rem' }}>
-          <h1 className="page-title">💼 Job Description Matcher</h1>
-          <p className="page-subtitle">Cross-reference your active resume with custom job requirements to inspect semantic alignment and fit.</p>
-        </header>
-        
-        <div className="card" style={{
-          textAlign: 'center',
-          padding: '4rem 2rem',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '1.5rem',
-          maxWidth: '600px',
-          margin: '2rem auto'
-        }}>
-          <div style={{ fontSize: '4rem' }}>💼</div>
-          <h2>No Resume Uploaded</h2>
-          <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto' }}>
-            Upload your resume in the Resume Analyzer module first to enable job compatibility scoring.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   const getScoreColor = (score) => {
     if (score >= 85) return '#10b981';
@@ -40,7 +13,7 @@ const JobMatcher = () => {
     return '#ef4444';
   };
 
-  const selectedJob = session.jobMatches.find(j => j.id === selectedJobId) || session.jobMatches[0];
+  const selectedJob = (activeSession.jobMatches || []).find(j => j.id === selectedJobId) || activeSession.jobMatches?.[0] || {};
 
   return (
     <div className="job-matcher">
@@ -53,7 +26,7 @@ const JobMatcher = () => {
         {/* Left Column: Match selection cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <h3 style={{ fontSize: '1.15rem' }}>Matched Opportunities</h3>
-          {session.jobMatches.map(job => {
+          {(activeSession.jobMatches || []).map(job => {
             const isSelected = job.id === selectedJobId;
             return (
               <div 

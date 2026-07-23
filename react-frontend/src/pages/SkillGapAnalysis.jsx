@@ -1,37 +1,10 @@
 import React, { useState } from 'react';
-import { useSession } from '../context/SessionContext';
+import { useSession, DEFAULT_DEMO_SESSION } from '../context/SessionContext';
 
 const SkillGapAnalysis = () => {
   const { session } = useSession();
+  const activeSession = session || DEFAULT_DEMO_SESSION;
   const [expandedSkill, setExpandedSkill] = useState(null);
-
-  if (!session) {
-    return (
-      <div style={{ padding: '2rem 0' }}>
-        <header style={{ marginBottom: '2.5rem' }}>
-          <h1 className="page-title">📊 Competency & Skill Gap Analysis</h1>
-          <p className="page-subtitle">Inspect matching credentials, pinpoint missing tech stacks, and check prioritized learning timetables.</p>
-        </header>
-        
-        <div className="card" style={{
-          textAlign: 'center',
-          padding: '4rem 2rem',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '1.5rem',
-          maxWidth: '600px',
-          margin: '2rem auto'
-        }}>
-          <div style={{ fontSize: '4rem' }}>📊</div>
-          <h2>No Resume Uploaded</h2>
-          <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto' }}>
-            Upload your resume in the Resume Analyzer module first to evaluate skill gap parameters.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   const getPriorityColor = (priority) => {
     switch (priority) {
@@ -77,8 +50,8 @@ const SkillGapAnalysis = () => {
     }
   ];
 
-  const displayGaps = (session.skillGaps && session.skillGaps.length > 0) ? session.skillGaps : defaultGaps;
-  const parsedCount = session.extractedSkills ? session.extractedSkills.length : 12;
+  const displayGaps = (activeSession.skillGaps && activeSession.skillGaps.length > 0) ? activeSession.skillGaps : defaultGaps;
+  const parsedCount = activeSession.extractedSkills ? activeSession.extractedSkills.length : 12;
   const gapCount = displayGaps.length;
   const totalSkillCount = parsedCount + gapCount;
   const matchRatio = Math.round((parsedCount / totalSkillCount) * 100);
@@ -103,9 +76,9 @@ const SkillGapAnalysis = () => {
             <div className="flex-between">
               <div>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block' }}>Active Audited File</span>
-                <strong style={{ fontSize: '1rem', color: 'var(--accent-primary)' }}>{session.uploadedResume?.filename || 'Resume_Parsed.pdf'}</strong>
+                <strong style={{ fontSize: '1rem', color: 'var(--accent-primary)' }}>{activeSession.resumeName || activeSession.uploadedResume?.filename || 'Resume_Parsed.pdf'}</strong>
               </div>
-              <span className="badge-tag info">Uploaded {session.uploadedResume?.uploadDate || 'Recently'}</span>
+              <span className="badge-tag info">Uploaded {activeSession.uploadedResume?.uploadDate || 'Recently'}</span>
             </div>
           </div>
 
