@@ -1,0 +1,57 @@
+================================================================================
+INTEL CAREER & PLACEMENT MASTER GUIDE
+================================================================================
+
+CHAPTER 1: BIG TECH HIRING PROCESS & EXPECTATIONS
+
+1.1 Google Software Engineering (SWE) Placements
+Google's technical recruitment relies heavily on data structures and algorithms (DSA). A standard interview process includes:
+- Online Assessment (OA): 2 questions in 90 minutes. Focused on graph algorithms, dynamic programming, or advanced string manipulation.
+- Technical Rounds (3-4 rounds): 45 minutes each. Candidates are expected to talk through their thought process, write clean code, analyze time and space complexity, and optimize the solution. Topics: trees, graphs (Dijkstra's, DFS, BFS), heap, binary search, and sliding window.
+- Googleyness & Leadership (1 round): Behavioral round evaluating cultural alignment, feedback handling, ambiguity management, and bias-free execution.
+Tip: Always dry run your code with edge cases (e.g., empty array, extremely large values, duplicates).
+
+1.2 Microsoft Software Engineering Internships
+Microsoft values software craftsmanship and system design fundamentals alongside coding skills.
+- Codility/Online Test: 3 coding questions covering arrays, hashing, and sorting.
+- Technical Round 1 (Algorithms): Binary search, linked list operations, tree traversals, and recursion.
+- Technical Round 2 (System Design/OOD): Focus on Object-Oriented Design (e.g., design a parking lot, design an elevator system, or design a reservation system).
+- Director Round: Technical-behavioral hybrid. Includes deep dives into projects, low-level design, database normalization, and behavioral questions like "Why Microsoft?".
+Tip: Make sure you understand OOP design principles (SOLID principles) and clean coding practices.
+
+1.3 Amazon Software Engineering Recruitment
+Amazon's hiring process is unique due to its strong alignment with its 16 Leadership Principles (LPs).
+- Online Assessment: Coding challenges, work style assessment, and a simulated system debugging module.
+- Technical Rounds (3 rounds): Each round starts with 15-20 minutes of Behavioral questions testing specific LPs (e.g., Customer Obsession, Ownership, Dive Deep, Deliver Results). The remaining 30 minutes focus on coding or system design.
+- Bar Raiser Round: Conducted by an independent interviewer to ensure the candidate raises the median capability level of the company. Heavily focuses on scalability, databases, and trade-off analysis.
+Tip: When answering Amazon behavioral questions, structure your answers using the STAR method (Situation, Task, Action, Result) and explicitly map them to Leadership Principles.
+
+================================================================================
+CHAPTER 2: TECHNICAL CORE CONCEPTS PREPARATION
+
+2.1 Data Structures & Algorithms (DSA) Roadmap
+- Arrays & Hashing: Master sliding window, two-pointer techniques, and prefix sums. Understand hash maps and hash sets.
+- Trees & Graphs: Know DFS, BFS, Union-Find, Dijkstra's algorithm, and topological sorting.
+- Dynamic Programming: Learn memoization (top-down) and tabulation (bottom-up). Practice classical problems like 0/1 Knapsack, Longest Common Subsequence (LCS), and Edit Distance.
+- Heaps & Priority Queues: Essential for top-K elements problems.
+
+2.2 System Design & Scalability
+- Microservices: Understand API Gateways, Service Discovery, and Load Balancing.
+- Caching: Learn Redis/Memcached. Know caching strategies (write-through, write-back, cache-aside) and eviction policies (LRU, LFU).
+- Databases: Understand SQL (PostgreSQL, MySQL) vs. NoSQL (MongoDB, Cassandra). Master horizontal partitioning (sharding), replication models (master-slave), and ACID properties.
+- Message Queues: Understand asynchronous processing using RabbitMQ, Celery, or Apache Kafka.
+
+================================================================================
+CHAPTER 3: BEHAVIORAL INTERVIEWS & THE STAR METHOD
+
+The STAR method is the gold standard for behavioral questions:
+- Situation: Describe the context, project, or problem you faced. Keep it concise.
+- Task: Define what goal or responsibility you had to manage.
+- Action: Outline the exact steps YOU took. Explain why you made those decisions. Use "I", not "We".
+- Result: Present the quantitative and qualitative outcomes of your actions (e.g., "reduced query latency by 35%", "delivered the product 2 days ahead of schedule").
+
+Common Behavioral Questions to prepare:
+1. "Tell me about a time you had to deliver a project under a tight deadline."
+2. "Describe a scenario where you disagreed with your manager or team lead. How did you handle it?"
+3. "Give an example of a project that failed. What did you learn?"
+4. "Describe how you motivated a team member who was underperforming."
