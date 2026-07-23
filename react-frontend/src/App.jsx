@@ -90,21 +90,6 @@ function AppContent() {
 
       {/* Main Content Area */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        {/* Only render header for non-landing pages */}
-        {!isPublicLanding && (
-          <header className="global-header" style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-            padding: '1rem 2rem',
-            background: '#161b22',
-            borderBottom: '1px solid var(--border-color)',
-            gap: '1.5rem',
-            position: 'relative'
-          }}>
-          </header>
-        )}
-
         <main className="main-content" style={isPublicLanding ? { padding: '1.5rem 2rem', background: 'transparent', overflowX: 'hidden' } : {}}>
           <Routes>
             <Route path="/" element={<Dashboard />} />
