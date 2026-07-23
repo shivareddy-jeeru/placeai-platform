@@ -215,61 +215,63 @@ export default function Dashboard() {
               onClick={() => setShowNotifications(!showNotifications)}
               style={{
                 position: 'relative',
-                background: '#12141f',
-                border: '1px solid rgba(255,255,255,0.08)',
-                color: '#ffffff',
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                color: '#0f172a',
                 borderRadius: '10px',
-                width: '38px',
-                height: '38px',
+                width: '40px',
+                height: '40px',
                 cursor: 'pointer',
-                fontSize: '1.05rem',
+                fontSize: '1.1rem',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
                 transition: 'all 0.2s'
               }}
-              onMouseEnter={e => e.currentTarget.style.background = '#1c1f2e'}
-              onMouseLeave={e => e.currentTarget.style.background = '#12141f'}
+              onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+              onMouseLeave={e => e.currentTarget.style.background = '#ffffff'}
+              title="Notifications"
             >
               🔔
               {notifications && notifications.filter(n => !n.read).length > 0 && (
-                <span style={{ position: 'absolute', top: '-2px', right: '-2px', background: '#ef4444', color: '#ffffff', fontSize: '0.55rem', fontWeight: '900', borderRadius: '50%', width: '15px', height: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ position: 'absolute', top: '-4px', right: '-4px', background: '#ef4444', color: '#ffffff', fontSize: '0.6rem', fontWeight: '900', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #ffffff' }}>
                   {notifications.filter(n => !n.read).length}
                 </span>
               )}
             </button>
 
-            {/* Dropdown list */}
+            {/* Notifications Dropdown */}
             {showNotifications && (
               <div style={{
                 position: 'absolute',
-                top: '45px',
+                top: '48px',
                 right: '0',
-                background: '#161925',
-                border: '1px solid #2d3342',
-                borderRadius: '12px',
-                width: '280px',
-                boxShadow: '0 10px 25px rgba(0, 0, 0, 0.3)',
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '14px',
+                width: '320px',
+                boxShadow: '0 12px 30px rgba(0, 0, 0, 0.12)',
                 zIndex: 1001,
-                padding: '0.75rem'
+                padding: '1rem'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.4rem', marginBottom: '0.4rem' }}>
-                  <span style={{ fontWeight: '800', fontSize: '0.75rem', color: '#ffffff' }}>Notifications</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '0.75rem' }}>
+                  <span style={{ fontWeight: '800', fontSize: '0.85rem', color: '#0f172a' }}>Notifications & Alerts</span>
                   <button
                     onClick={() => { setNotifications([]); setShowNotifications(false); }}
-                    style={{ background: 'none', border: 'none', color: '#a5b4fc', fontSize: '0.62rem', fontWeight: '800', cursor: 'pointer' }}
+                    style={{ background: 'none', border: 'none', color: '#4f46e5', fontSize: '0.72rem', fontWeight: '800', cursor: 'pointer' }}
                   >
                     Clear All
                   </button>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '180px', overflowY: 'auto' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '220px', overflowY: 'auto' }}>
                   {(!notifications || notifications.length === 0) ? (
-                    <div style={{ padding: '0.5rem', textAlign: 'center', color: '#64748b', fontSize: '0.68rem' }}>No new notifications</div>
+                    <div style={{ padding: '1rem', textAlign: 'center', color: '#64748b', fontSize: '0.8rem' }}>No new notifications</div>
                   ) : (
                     notifications.map(n => (
-                      <div key={n.id} style={{ padding: '0.45rem', background: '#1e2233', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <p style={{ margin: 0, fontSize: '0.68rem', color: '#e2e8f0', lineHeight: 1.35 }}>{n.text}</p>
-                        <span style={{ fontSize: '0.55rem', color: '#64748b', marginTop: '2px', display: 'block' }}>{n.time}</span>
+                      <div key={n.id} style={{ padding: '0.6rem 0.75rem', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                        <p style={{ margin: 0, fontSize: '0.78rem', color: '#0f172a', fontWeight: '600', lineHeight: 1.4 }}>{n.text}</p>
+                        <span style={{ fontSize: '0.65rem', color: '#64748b', marginTop: '3px', display: 'block' }}>{n.time}</span>
                       </div>
                     ))
                   )}
@@ -278,46 +280,45 @@ export default function Dashboard() {
             )}
           </div>
 
-          <button style={{ background: '#12141f', border: '1px solid rgba(255,255,255,0.08)', color: '#e2e8f0', borderRadius: '10px', padding: '0.5rem 1.1rem', cursor: 'pointer', fontSize: '0.78rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <button style={{ background: '#ffffff', border: '1px solid #e2e8f0', color: '#0f172a', borderRadius: '10px', padding: '0.55rem 1.1rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.4rem', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
             📥 Export Report
           </button>
           
           <button
             onClick={resetSession}
             style={{
-              background: 'rgba(239, 68, 68, 0.12)',
-              border: '1px solid rgba(239, 68, 68, 0.25)',
-              color: '#f87171',
+              background: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.2)',
+              color: '#ef4444',
               borderRadius: '10px',
-              padding: '0.5rem 1.1rem',
+              padding: '0.55rem 1.1rem',
               cursor: 'pointer',
-              fontSize: '0.78rem',
+              fontSize: '0.82rem',
               fontWeight: '800',
               display: 'flex',
               alignItems: 'center',
               gap: '0.4rem',
               transition: 'all 0.2s'
             }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.22)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)'}
             title="Clear and reset active resume and job details"
           >
             🔄 Reset Session
           </button>
 
-          <button onClick={triggerUpload} style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#ffffff', border: 'none', borderRadius: '10px', padding: '0.5rem 1.25rem', cursor: 'pointer', fontSize: '0.78rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.4rem', boxShadow: '0 4px 12px rgba(99,102,241,0.2)' }}>
+          <button onClick={triggerUpload} style={{ background: 'linear-gradient(135deg,#4f46e5,#6366f1)', color: '#ffffff', border: 'none', borderRadius: '10px', padding: '0.55rem 1.35rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.4rem', boxShadow: '0 4px 14px rgba(79,70,229,0.3)' }}>
             ☁️ Upload Resume
           </button>
-          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontWeight: '800', fontSize: '0.95rem' }}>{d_name[0].toUpperCase()}</div>
         </div>
       </div>
 
-      {/* ─── WELCOME SUBHEADER ────────────────────────────────────── */}
+      {/* ─── GENERAL PLACEMENT HEADER ─────────────────────────────── */}
       <div>
-        <h2 style={{ fontSize: '1.75rem', fontWeight: '900', color: '#ffffff', margin: 0, letterSpacing: '-0.02em' }}>
-          {greeting}, <span style={{ color: '#8b5cf6' }}>{d_name}!</span> 👋
+        <h2 style={{ fontSize: '1.85rem', fontWeight: '900', color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
+          Placement Readiness Dashboard 🎯
         </h2>
-        <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '3px 0 0 0', fontWeight: '600' }}>Your placement journey, intelligently organized.</p>
+        <p style={{ fontSize: '0.9rem', color: '#64748b', margin: '4px 0 0 0', fontWeight: '600' }}>
+          Track your resume ATS score, skill gap analysis, and AI mock interview progress.
+        </p>
       </div>
 
       {/* ─── ROW 1: HERO BANNER & RESUME READINESS ─────────────────── */}
