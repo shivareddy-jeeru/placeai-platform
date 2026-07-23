@@ -111,148 +111,123 @@ const ResumeAnalyzer = () => {
       {/* ========================================================================= */}
       {/* TOP HERO & 6 PROCESS STEP CARDS GRID                                      */}
       {/* ========================================================================= */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1.4fr', gap: '2.5rem', alignItems: 'center' }}>
-        
-        {/* LEFT HERO COLUMN */}
-        <div>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            background: 'rgba(99, 102, 241, 0.15)',
-            border: '1px solid rgba(99, 102, 241, 0.35)',
-            color: '#a855f7',
-            fontWeight: '800',
-            fontSize: '0.78rem',
-            padding: '0.35rem 0.9rem',
-            borderRadius: '999px',
-            letterSpacing: '0.08em',
-            marginBottom: '1.25rem'
-          }}>
-            RESUME ANALYZER
-          </div>
-
-          <h1 style={{ fontSize: '2.75rem', fontWeight: '900', lineHeight: '1.12', color: '#ffffff', margin: '0 0 1rem 0', letterSpacing: '-0.03em' }}>
-            Understand where <br />
-            you stand. <br />
-            <span style={{
-              background: 'linear-gradient(to right, #a855f7, #60a5fa)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
-            }}>
-              Build where you want to go.
-            </span>
-          </h1>
-
-          <p style={{ fontSize: '0.98rem', color: '#94a3b8', lineHeight: '1.6', marginBottom: '1.75rem', maxWidth: '480px' }}>
-            Analyze your resume against your target role, discover skill gaps, and get a personalized roadmap to become placement-ready.
-          </p>
-
-          <button 
-            onClick={() => {
-              if (viewMode === 'upload_active') {
-                uploadSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
-              } else {
-                resumeInputRef.current?.click();
-              }
-            }}
-            style={{
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '12px',
-              padding: '0.85rem 1.85rem',
-              fontSize: '0.95rem',
-              fontWeight: '800',
-              cursor: 'pointer',
-              boxShadow: '0 8px 25px rgba(99, 102, 241, 0.4)',
+      {/* ========================================================================= */}
+      {/* TOP HERO BANNER & 6 PROCESS STEP CARDS (MATCHING REFERENCE UI)            */}
+      {/* ========================================================================= */}
+      <div style={{
+        background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)',
+        borderRadius: '24px',
+        padding: '2.5rem 3rem',
+        boxShadow: '0 20px 40px -15px rgba(79, 70, 229, 0.4)',
+        marginBottom: '2.5rem'
+      }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.15fr 1.35fr', gap: '2.5rem', alignItems: 'center' }}>
+          
+          {/* LEFT HERO COLUMN */}
+          <div>
+            <div style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '0.5rem',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <span>✨</span> Analyze My Resume
-          </button>
+              background: 'rgba(255, 255, 255, 0.2)',
+              backdropFilter: 'blur(8px)',
+              color: '#ffffff',
+              fontWeight: '800',
+              fontSize: '0.75rem',
+              padding: '0.4rem 1.1rem',
+              borderRadius: '999px',
+              letterSpacing: '0.12em',
+              marginBottom: '1.25rem',
+              textTransform: 'uppercase'
+            }}>
+              RESUME ANALYZER
+            </div>
+
+            <h1 style={{ fontSize: '2.85rem', fontWeight: '900', lineHeight: '1.12', color: '#ffffff', margin: '0 0 1rem 0', letterSpacing: '-0.03em' }}>
+              A smarter way to <br />
+              screen resumes <br />
+              and JDs
+            </h1>
+
+            <p style={{ fontSize: '1rem', color: 'rgba(255, 255, 255, 0.9)', lineHeight: '1.55', marginBottom: '1.85rem', maxWidth: '440px' }}>
+              Analyze candidate resumes against job requirements with AI-powered alignment, skills highlights, and recruiter-ready insights.
+            </p>
+
+            <button 
+              onClick={() => {
+                if (viewMode === 'upload_active') {
+                  uploadSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                  resumeInputRef.current?.click();
+                }
+              }}
+              style={{
+                background: '#ffffff',
+                color: '#4f46e5',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '0.85rem 2rem',
+                fontSize: '1rem',
+                fontWeight: '800',
+                cursor: 'pointer',
+                boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              Start Analysis
+            </button>
+          </div>
+
+          {/* RIGHT COLUMN: 6 PROCESS STEP CARDS (3x2 GRID) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+            
+            {/* Step 1 */}
+            <div style={{ background: '#ffffff', borderRadius: '16px', padding: '1.25rem 1.2rem', boxShadow: '0 4px 15px rgba(0,0,0,0.06)' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#4f46e5', color: '#ffffff', fontWeight: '800', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.85rem' }}>1</div>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0f172a', margin: '0 0 0.35rem 0' }}>Choose a domain</h4>
+              <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0, lineHeight: '1.4' }}>Pick the target role domain that best fits the hiring need.</p>
+            </div>
+
+            {/* Step 2 */}
+            <div style={{ background: '#ffffff', borderRadius: '16px', padding: '1.25rem 1.2rem', boxShadow: '0 4px 15px rgba(0,0,0,0.06)' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#4f46e5', color: '#ffffff', fontWeight: '800', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.85rem' }}>2</div>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0f172a', margin: '0 0 0.35rem 0' }}>Upload JD details</h4>
+              <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0, lineHeight: '1.4' }}>Upload a job description file or paste the text directly.</p>
+            </div>
+
+            {/* Step 3 */}
+            <div onClick={() => resumeInputRef.current?.click()} style={{ background: '#ffffff', borderRadius: '16px', padding: '1.25rem 1.2rem', boxShadow: '0 4px 15px rgba(0,0,0,0.06)', cursor: 'pointer' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#4f46e5', color: '#ffffff', fontWeight: '800', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.85rem' }}>3</div>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0f172a', margin: '0 0 0.35rem 0' }}>Add resume</h4>
+              <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0, lineHeight: '1.4' }}>Attach a candidate resume in PDF, DOCX, or TXT format.</p>
+            </div>
+
+            {/* Step 4 */}
+            <div style={{ background: '#ffffff', borderRadius: '16px', padding: '1.25rem 1.2rem', boxShadow: '0 4px 15px rgba(0,0,0,0.06)' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#4f46e5', color: '#ffffff', fontWeight: '800', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.85rem' }}>4</div>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0f172a', margin: '0 0 0.35rem 0' }}>Run the analysis</h4>
+              <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0, lineHeight: '1.4' }}>Start the AI match to reveal skills alignment and gaps.</p>
+            </div>
+
+            {/* Step 5 */}
+            <div style={{ background: '#ffffff', borderRadius: '16px', padding: '1.25rem 1.2rem', boxShadow: '0 4px 15px rgba(0,0,0,0.06)' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#4f46e5', color: '#ffffff', fontWeight: '800', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.85rem' }}>5</div>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0f172a', margin: '0 0 0.35rem 0' }}>Review results</h4>
+              <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0, lineHeight: '1.4' }}>See scorecards, missing capabilities, and evidence snapshots.</p>
+            </div>
+
+            {/* Step 6 */}
+            <div style={{ background: '#ffffff', borderRadius: '16px', padding: '1.25rem 1.2rem', boxShadow: '0 4px 15px rgba(0,0,0,0.06)' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#4f46e5', color: '#ffffff', fontWeight: '800', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.85rem' }}>6</div>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0f172a', margin: '0 0 0.35rem 0' }}>Export report</h4>
+              <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0, lineHeight: '1.4' }}>Download a polished PDF recruiter report from the sidebar.</p>
+            </div>
+
+          </div>
+
         </div>
-
-        {/* RIGHT COLUMN: 6 PROCESS STEP CARDS (3x2 GRID) */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
-          
-          {/* Step 1 */}
-          <div className="step-card-dark">
-            <div className="flex-between">
-              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#4f46e5', color: 'white', fontWeight: '800', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>1</div>
-              <span style={{ fontSize: '1.2rem', color: '#818cf8' }}>🎯</span>
-            </div>
-            <div>
-              <h4 style={{ fontSize: '0.9rem', fontWeight: '800', color: '#ffffff', margin: '0 0 0.25rem 0' }}>Choose your target role</h4>
-              <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: 0, lineHeight: '1.35' }}>Select the role you are preparing for.</p>
-            </div>
-          </div>
-
-          {/* Step 2 */}
-          <div className="step-card-dark">
-            <div className="flex-between">
-              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#4f46e5', color: 'white', fontWeight: '800', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>2</div>
-              <span style={{ fontSize: '1.2rem', color: '#818cf8' }}>📑</span>
-            </div>
-            <div>
-              <h4 style={{ fontSize: '0.9rem', fontWeight: '800', color: '#ffffff', margin: '0 0 0.25rem 0' }}>Add job description</h4>
-              <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: 0, lineHeight: '1.35' }}>Paste a JD or use our role-based benchmark.</p>
-            </div>
-          </div>
-
-          {/* Step 3 */}
-          <div className="step-card-dark" onClick={() => resumeInputRef.current?.click()} style={{ cursor: 'pointer' }}>
-            <div className="flex-between">
-              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#4f46e5', color: 'white', fontWeight: '800', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>3</div>
-              <span style={{ fontSize: '1.2rem', color: '#818cf8' }}>☁️</span>
-            </div>
-            <div>
-              <h4 style={{ fontSize: '0.9rem', fontWeight: '800', color: '#ffffff', margin: '0 0 0.25rem 0' }}>Upload your resume</h4>
-              <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: 0, lineHeight: '1.35' }}>Upload your resume in PDF, DOCX or TXT.</p>
-            </div>
-          </div>
-
-          {/* Step 4 */}
-          <div className="step-card-dark">
-            <div className="flex-between">
-              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#4f46e5', color: 'white', fontWeight: '800', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>4</div>
-              <span style={{ fontSize: '1.2rem', color: '#818cf8' }}>🤖</span>
-            </div>
-            <div>
-              <h4 style={{ fontSize: '0.9rem', fontWeight: '800', color: '#ffffff', margin: '0 0 0.25rem 0' }}>Let AI understand your profile</h4>
-              <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: 0, lineHeight: '1.35' }}>Our AI agents extract skills, experience & projects.</p>
-            </div>
-          </div>
-
-          {/* Step 5 */}
-          <div className="step-card-dark">
-            <div className="flex-between">
-              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#4f46e5', color: 'white', fontWeight: '800', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>5</div>
-              <span style={{ fontSize: '1.2rem', color: '#818cf8' }}>📈</span>
-            </div>
-            <div>
-              <h4 style={{ fontSize: '0.9rem', fontWeight: '800', color: '#ffffff', margin: '0 0 0.25rem 0' }}>Discover your gaps</h4>
-              <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: 0, lineHeight: '1.35' }}>See exact matches, semantic matches and missing capabilities.</p>
-            </div>
-          </div>
-
-          {/* Step 6 */}
-          <div className="step-card-dark">
-            <div className="flex-between">
-              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#4f46e5', color: 'white', fontWeight: '800', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>6</div>
-              <span style={{ fontSize: '1.2rem', color: '#818cf8' }}>🚩</span>
-            </div>
-            <div>
-              <h4 style={{ fontSize: '0.9rem', fontWeight: '800', color: '#ffffff', margin: '0 0 0.25rem 0' }}>Get your action plan</h4>
-              <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: 0, lineHeight: '1.35' }}>Receive a personalized roadmap to improve your placement readiness.</p>
-            </div>
-          </div>
-
-        </div>
-
       </div>
 
       {/* ========================================================================= */}
