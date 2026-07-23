@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
 import './index.css';
 import Dashboard from './pages/Dashboard';
-import AnalysisView from './pages/AnalysisView';
 import ResumeAnalyzer from './pages/ResumeAnalyzer';
 import JobMatcher from './pages/JobMatcher';
 import SkillGapAnalysis from './pages/SkillGapAnalysis';
@@ -35,17 +34,28 @@ function AppContent() {
             <NavLink to="/" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
               <span style={{ marginRight: '0.75rem' }}>🏠</span> Dashboard
             </NavLink>
-            <NavLink to="/analysis" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
-              <span style={{ marginRight: '0.75rem' }}>📊</span> Analysis Hub
-            </NavLink>
-            <NavLink to="/roadmap" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
-              <span style={{ marginRight: '0.75rem' }}>🗺️</span> Roadmap
+            <NavLink to="/resume" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
+              <span style={{ marginRight: '0.75rem' }}>📄</span> Resume Analyzer
             </NavLink>
             <NavLink to="/matcher" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
-              <span style={{ marginRight: '0.75rem' }}>💼</span> Job Matches
+              <span style={{ marginRight: '0.75rem' }}>💼</span> Job Matcher
             </NavLink>
-            <NavLink to="/interview" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
-              <span style={{ marginRight: '0.75rem' }}>🎤</span> Interview Coach
+            <NavLink to="/skills" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
+              <span style={{ marginRight: '0.75rem' }}>📊</span> Skill Gaps
+            </NavLink>
+            <NavLink to="/roadmap" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
+              <span style={{ marginRight: '0.75rem' }}>🗺️</span> Learning Roadmap
+              {session && session.learningRoadmap && (
+                <span className="nav-badge" style={{ backgroundColor: '#10b981' }}>
+                  {typeof session.roadmapProgress === 'number' ? `${session.roadmapProgress}%` : 'ACTIVE'}
+                </span>
+              )}
+            </NavLink>
+            <NavLink to="/progress" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
+              <span style={{ marginRight: '0.75rem' }}>📈</span> Progress Analytics
+            </NavLink>
+            <NavLink to="/assistant" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
+              <span style={{ marginRight: '0.75rem' }}>🤖</span> Placement Assistant
             </NavLink>
             <NavLink to="/progress" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
               <span style={{ marginRight: '0.75rem' }}>📁</span> Saved Reports
@@ -87,7 +97,7 @@ function AppContent() {
             justifyContent: 'flex-end',
             alignItems: 'center',
             padding: '1rem 2rem',
-            background: '#ffffff',
+            background: '#161b22',
             borderBottom: '1px solid var(--border-color)',
             gap: '1.5rem',
             position: 'relative'
@@ -98,7 +108,6 @@ function AppContent() {
         <main className="main-content" style={isPublicLanding ? { padding: '1.5rem 2rem', background: 'transparent', overflowX: 'hidden' } : {}}>
           <Routes>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/analysis" element={<AnalysisView />} />
             <Route path="/resume" element={<ResumeAnalyzer />} />
             <Route path="/matcher" element={<JobMatcher />} />
             <Route path="/skills" element={<SkillGapAnalysis />} />
