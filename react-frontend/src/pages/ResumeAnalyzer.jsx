@@ -111,123 +111,14 @@ const ResumeAnalyzer = () => {
       {/* ========================================================================= */}
       {/* TOP HERO & 6 PROCESS STEP CARDS GRID                                      */}
       {/* ========================================================================= */}
-      {/* ========================================================================= */}
-      {/* TOP HERO BANNER & 6 PROCESS STEP CARDS (MATCHING REFERENCE UI)            */}
-      {/* ========================================================================= */}
-      <div style={{
-        background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)',
-        borderRadius: '24px',
-        padding: '2.5rem 3rem',
-        boxShadow: '0 20px 40px -15px rgba(79, 70, 229, 0.4)',
-        marginBottom: '2.5rem'
-      }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.15fr 1.35fr', gap: '2.5rem', alignItems: 'center' }}>
-          
-          {/* LEFT HERO COLUMN */}
-          <div>
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              background: 'rgba(255, 255, 255, 0.2)',
-              backdropFilter: 'blur(8px)',
-              color: '#ffffff',
-              fontWeight: '800',
-              fontSize: '0.75rem',
-              padding: '0.4rem 1.1rem',
-              borderRadius: '999px',
-              letterSpacing: '0.12em',
-              marginBottom: '1.25rem',
-              textTransform: 'uppercase'
-            }}>
-              RESUME ANALYZER
-            </div>
-
-            <h1 style={{ fontSize: '2.85rem', fontWeight: '900', lineHeight: '1.12', color: '#ffffff', margin: '0 0 1rem 0', letterSpacing: '-0.03em' }}>
-              A smarter way to <br />
-              screen resumes <br />
-              and JDs
-            </h1>
-
-            <p style={{ fontSize: '1rem', color: 'rgba(255, 255, 255, 0.9)', lineHeight: '1.55', marginBottom: '1.85rem', maxWidth: '440px' }}>
-              Analyze candidate resumes against job requirements with AI-powered alignment, skills highlights, and recruiter-ready insights.
-            </p>
-
-            <button 
-              onClick={() => {
-                if (viewMode === 'upload_active') {
-                  uploadSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
-                } else {
-                  resumeInputRef.current?.click();
-                }
-              }}
-              style={{
-                background: '#ffffff',
-                color: '#4f46e5',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '0.85rem 2rem',
-                fontSize: '1rem',
-                fontWeight: '800',
-                cursor: 'pointer',
-                boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              Start Analysis
-            </button>
-          </div>
-
-          {/* RIGHT COLUMN: 6 PROCESS STEP CARDS (3x2 GRID) */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
-            
-            {/* Step 1 */}
-            <div style={{ background: '#ffffff', borderRadius: '16px', padding: '1.25rem 1.2rem', boxShadow: '0 4px 15px rgba(0,0,0,0.06)' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#4f46e5', color: '#ffffff', fontWeight: '800', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.85rem' }}>1</div>
-              <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0f172a', margin: '0 0 0.35rem 0' }}>Choose a domain</h4>
-              <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0, lineHeight: '1.4' }}>Pick the target role domain that best fits the hiring need.</p>
-            </div>
-
-            {/* Step 2 */}
-            <div style={{ background: '#ffffff', borderRadius: '16px', padding: '1.25rem 1.2rem', boxShadow: '0 4px 15px rgba(0,0,0,0.06)' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#4f46e5', color: '#ffffff', fontWeight: '800', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.85rem' }}>2</div>
-              <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0f172a', margin: '0 0 0.35rem 0' }}>Upload JD details</h4>
-              <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0, lineHeight: '1.4' }}>Upload a job description file or paste the text directly.</p>
-            </div>
-
-            {/* Step 3 */}
-            <div onClick={() => resumeInputRef.current?.click()} style={{ background: '#ffffff', borderRadius: '16px', padding: '1.25rem 1.2rem', boxShadow: '0 4px 15px rgba(0,0,0,0.06)', cursor: 'pointer' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#4f46e5', color: '#ffffff', fontWeight: '800', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.85rem' }}>3</div>
-              <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0f172a', margin: '0 0 0.35rem 0' }}>Add resume</h4>
-              <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0, lineHeight: '1.4' }}>Attach a candidate resume in PDF, DOCX, or TXT format.</p>
-            </div>
-
-            {/* Step 4 */}
-            <div style={{ background: '#ffffff', borderRadius: '16px', padding: '1.25rem 1.2rem', boxShadow: '0 4px 15px rgba(0,0,0,0.06)' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#4f46e5', color: '#ffffff', fontWeight: '800', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.85rem' }}>4</div>
-              <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0f172a', margin: '0 0 0.35rem 0' }}>Run the analysis</h4>
-              <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0, lineHeight: '1.4' }}>Start the AI match to reveal skills alignment and gaps.</p>
-            </div>
-
-            {/* Step 5 */}
-            <div style={{ background: '#ffffff', borderRadius: '16px', padding: '1.25rem 1.2rem', boxShadow: '0 4px 15px rgba(0,0,0,0.06)' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#4f46e5', color: '#ffffff', fontWeight: '800', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.85rem' }}>5</div>
-              <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0f172a', margin: '0 0 0.35rem 0' }}>Review results</h4>
-              <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0, lineHeight: '1.4' }}>See scorecards, missing capabilities, and evidence snapshots.</p>
-            </div>
-
-            {/* Step 6 */}
-            <div style={{ background: '#ffffff', borderRadius: '16px', padding: '1.25rem 1.2rem', boxShadow: '0 4px 15px rgba(0,0,0,0.06)' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#4f46e5', color: '#ffffff', fontWeight: '800', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.85rem' }}>6</div>
-              <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0f172a', margin: '0 0 0.35rem 0' }}>Export report</h4>
-              <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0, lineHeight: '1.4' }}>Download a polished PDF recruiter report from the sidebar.</p>
-            </div>
-
-          </div>
-
-        </div>
+      {/* ─── CLEAN PROJECT PAGE HEADER ───────────────────────────────── */}
+      <div style={{ marginBottom: '2rem' }}>
+        <h1 style={{ fontSize: '2.25rem', fontWeight: '900', color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>
+          Resume Analyzer & ATS Audit 📄
+        </h1>
+        <p style={{ fontSize: '0.95rem', color: '#64748b', margin: '6px 0 0 0', fontWeight: '600' }}>
+          Upload your resume to extract key competencies, evaluate ATS readability scores, and get recruiter insights.
+        </p>
       </div>
 
       {/* ========================================================================= */}
