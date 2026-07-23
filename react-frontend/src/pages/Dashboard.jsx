@@ -169,9 +169,8 @@ export default function Dashboard() {
     }
   };
 
-  // 7 feature cards for continuous infinite scroll
+  // Feature cards for continuous infinite scroll
   const featuresList = [
-    { title: 'Resume Analyzer', desc: 'Get ATS score, feedback and improve your resume.', route: '/resume', icon: '📄', color: '#6366f1' },
     { title: 'Job Matcher', desc: 'Find the best job roles that match your profile.', route: '/matcher', icon: '💼', color: '#10b981' },
     { title: 'Skill Gap Analysis', desc: 'Identify gaps and get actionable suggestions.', route: '/skills', icon: '📊', color: '#f59e0b' },
     { title: 'Learning Roadmap', desc: 'Personalised roadmap to close your skill gaps.', route: '/roadmap', icon: '🗺️', color: '#8b5cf6' },
