@@ -3,7 +3,7 @@ import { useSession } from '../context/SessionContext';
 import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
-  const { profile, session, history, startNewAnalysis } = useSession();
+  const { profile, session, history, startNewAnalysis, resetSession } = useSession();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
@@ -122,6 +122,27 @@ export default function Dashboard() {
           </div>
 
           <button
+            onClick={resetSession}
+            style={{
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+              color: '#ef4444',
+              borderRadius: '12px',
+              padding: '0.7rem 1.25rem',
+              fontSize: '0.88rem',
+              fontWeight: '800',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              transition: 'all 0.2s ease'
+            }}
+            title="Reset active session and all metrics back to 0"
+          >
+            🔄 Reset to 0
+          </button>
+
+          <button
             onClick={triggerUpload}
             style={{
               background: 'linear-gradient(135deg, #4f46e5, #6366f1)',
@@ -146,10 +167,10 @@ export default function Dashboard() {
       {/* ─── 1. TOP METRIC KPI CARDS ─────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
         {[
-          { label: 'Resumes Analyzed', val: history?.length || 12, sub: '↑ 3 this week', color: '#4f46e5', icon: '📄' },
-          { label: 'Average ATS Score', val: `${session?.atsScore || 87}%`, sub: 'High Readability', color: '#10b981', icon: '🎯' },
-          { label: 'Matched Job Roles', val: '3 Roles', sub: 'Google, Amazon, Azure', color: '#3b82f6', icon: '💼' },
-          { label: 'Learning Roadmap', val: 'Week 2 of 4', sub: '3 Tasks Active', color: '#8b5cf6', icon: '🗺️' }
+          { label: 'Resumes Analyzed', val: history?.length || 0, sub: history?.length ? '↑ Active' : '0 Resumes', color: '#4f46e5', icon: '📄' },
+          { label: 'Average ATS Score', val: session ? `${session.atsScore || 0}%` : '0%', sub: session ? 'Evaluated' : '0% Score', color: '#10b981', icon: '🎯' },
+          { label: 'Matched Job Roles', val: session ? `${session.jobMatches?.length || 0} Roles` : '0 Roles', sub: session ? 'Google, Amazon, Azure' : '0 Matches', color: '#3b82f6', icon: '💼' },
+          { label: 'Learning Roadmap', val: session ? 'Week 2 of 4' : '0 Tasks', sub: session ? '3 Tasks Active' : '0% Complete', color: '#8b5cf6', icon: '🗺️' }
         ].map((kpi, idx) => (
           <div key={idx} style={{
             background: '#ffffff',

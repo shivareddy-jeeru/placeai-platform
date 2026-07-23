@@ -414,7 +414,7 @@ export const SessionProvider = ({ children }) => {
     addNotification(`Analysis for ${session.uploadedResume.filename} has been saved to history.`);
   };
 
-  // Reset/Clear active session
+  // Reset/Clear active session to 0
   const resetSession = async () => {
     const sessId = localStorage.getItem('session_id');
     if (sessId) {
@@ -427,7 +427,9 @@ export const SessionProvider = ({ children }) => {
     
     localStorage.removeItem('session_id');
     localStorage.removeItem('placeai_session');
+    localStorage.removeItem('placeai_history');
     setSession(null);
+    setHistory([]);
 
     try {
       const res = await api.createSession();
@@ -436,7 +438,7 @@ export const SessionProvider = ({ children }) => {
       console.error(err);
     }
 
-    showToast('Current session cleared and reset', 'info');
+    showToast('Session and metrics reset to 0', 'info');
   };
 
   // Delete specific history record
