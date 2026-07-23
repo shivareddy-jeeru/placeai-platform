@@ -1,30 +1,57 @@
 import React, { useState, useEffect } from 'react';
-import { useSession, DEFAULT_DEMO_SESSION } from '../context/SessionContext';
+import { useSession } from '../context/SessionContext';
 import api from '../utils/api';
 
 const RoadmapView = () => {
   const { session, setSession, showToast } = useSession();
-  const activeSession = session || DEFAULT_DEMO_SESSION;
-  const [completedWeeks, setCompletedWeeks] = useState([1]);
+  const [completedWeeks, setCompletedWeeks] = useState([]);
 
   // Sync completed tasks when roadmap loads
   useEffect(() => {
-    if (activeSession?.learningRoadmap) {
-      const completed = (activeSession.learningRoadmap.completed_tasks || [])
+    if (session?.learningRoadmap) {
+      const completed = (session.learningRoadmap.completed_tasks || [])
         .map(Number)
         .filter(n => !isNaN(n));
-      if (completed.length > 0) setCompletedWeeks(completed);
+      setCompletedWeeks(completed);
     }
-  }, [activeSession]);
+  }, [session]);
+
+  if (!session || !session.learningRoadmap) {
+    return (
+      <div style={{ padding: '2rem 0' }}>
+        <header style={{ marginBottom: '2.5rem' }}>
+          <h1 className="page-title">🗺️ Learning Roadmap</h1>
+          <p className="page-subtitle">Your personalized week-by-week technical curriculum engineered by PlaceAI mentor.</p>
+        </header>
+        
+        <div className="card" style={{
+          textAlign: 'center',
+          padding: '4rem 2rem',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '1.5rem',
+          maxWidth: '600px',
+          margin: '2rem auto'
+        }}>
+          <div style={{ fontSize: '4rem' }}>🗺️</div>
+          <h2>No Learning Roadmap Active</h2>
+          <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto' }}>
+            Upload your resume in the Resume Analyzer module first to automatically generate a custom skill development roadmap.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Handle roadmap data format in session state
   const rawWeeks = 
-    activeSession?.learningRoadmap?.weeks || 
-    activeSession?.learningRoadmap?.roadmap_data?.weeks || 
-    activeSession?.learningRoadmap?.roadmap_data?.milestones || 
-    activeSession?.learningRoadmap?.milestones || 
-    activeSession?.learningRoadmap?.roadmap_data?.phases || 
-    activeSession?.learningRoadmap?.phases || 
+    session.learningRoadmap.weeks || 
+    session.learningRoadmap.roadmap_data?.weeks || 
+    session.learningRoadmap.roadmap_data?.milestones || 
+    session.learningRoadmap.milestones || 
+    session.learningRoadmap.roadmap_data?.phases || 
+    session.learningRoadmap.phases || 
     [];
   
   // Normalize each item to match the UI expectations:

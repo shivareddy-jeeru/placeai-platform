@@ -1,150 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../utils/api';
 
-export const DEFAULT_DEMO_SESSION = {
-  sessionId: 'demo-session-001',
-  placementReadiness: 84,
-  atsScore: 84,
-  resumeName: 'Shiva_Reddy_SoftwareEngineer_Resume.pdf',
-  extractedSkills: [
-    'React', 'JavaScript', 'Node.js', 'Python', 'FastAPI',
-    'SQL', 'Git', 'REST APIs', 'HTML5/CSS3', 'Data Structures',
-    'Algorithms', 'Tailwind CSS', 'Redux Toolkit', 'MongoDB', 'Docker'
-  ],
-  matchingSkills: ['React', 'JavaScript', 'Node.js', 'Python', 'FastAPI', 'REST APIs', 'Git', 'HTML5/CSS3'],
-  missingSkills: ['System Design & Scalability', 'Docker & Kubernetes', 'PostgreSQL Query Tuning', 'Redis Caching', 'GraphQL APIs'],
-  recommendations: [
-    'Highlight full-stack project architecture and API performance metrics.',
-    'Add Docker containerization experience to strengthen DevOps matching.',
-    'Include System Design patterns (Caching, Load Balancing, Database Sharding) for target roles.'
-  ],
-  jobMatches: [
-    {
-      id: 'job-1',
-      role: 'Full Stack Software Engineer',
-      company: 'Infosys / Tech Target',
-      logo: '⚡',
-      matchPercent: 86,
-      scoreColor: '#10b981',
-      matchingSkills: ['React', 'JavaScript', 'Node.js', 'Python', 'REST APIs', 'Git'],
-      missingSkills: ['Docker & Kubernetes', 'System Design'],
-      matchingKeywordsCount: 14,
-      missingKeywordsCount: 3,
-      salaryRange: '$85,000 - $110,000 /yr',
-      location: 'Hybrid / Bangalore, IN',
-      summary: 'High compatibility match with candidate frontend & backend experience.'
-    },
-    {
-      id: 'job-2',
-      role: 'Frontend UI/UX Engineer',
-      company: 'Google Cloud Platform',
-      logo: '🌐',
-      matchPercent: 91,
-      scoreColor: '#10b981',
-      matchingSkills: ['React', 'JavaScript', 'HTML5/CSS3', 'Tailwind CSS', 'Redux Toolkit', 'REST APIs'],
-      missingSkills: ['TypeScript Strict Mode', 'Webpack/Vite Tuning'],
-      matchingKeywordsCount: 18,
-      missingKeywordsCount: 2,
-      salaryRange: '$120,000 - $150,000 /yr',
-      location: 'Remote',
-      summary: 'Exceptional UI/UX & React framework alignment.'
-    },
-    {
-      id: 'job-3',
-      role: 'Backend API Developer',
-      company: 'Amazon Web Services',
-      logo: '📦',
-      matchPercent: 78,
-      scoreColor: '#3b82f6',
-      matchingSkills: ['Python', 'FastAPI', 'Node.js', 'SQL', 'MongoDB'],
-      missingSkills: ['Redis Caching', 'PostgreSQL Query Tuning', 'AWS Lambda'],
-      matchingKeywordsCount: 12,
-      missingKeywordsCount: 5,
-      salaryRange: '$110,000 - $140,000 /yr',
-      location: 'Hybrid / Hyderabad, IN',
-      summary: 'Solid Python & REST API foundation; minor cloud & caching gaps.'
-    }
-  ],
-  skillGaps: [
-    {
-      skill: 'System Design & Scalability',
-      priority: 'Critical',
-      interviewFreq: 'Very High',
-      status: 'In Progress',
-      topics: ['Load Balancers & API Gateways', 'Database Sharding', 'Redis Caching Strategies', 'Microservices Architecture'],
-      resources: ['System Design Primer Guide', 'High Scalability Real-world Architectures']
-    },
-    {
-      skill: 'Docker & Kubernetes',
-      priority: 'High',
-      interviewFreq: 'High',
-      status: 'Locked',
-      topics: ['Dockerfile Optimization', 'Multi-stage Builds', 'Docker Compose Networking', 'K8s Pod Management'],
-      resources: ['Docker Basics for Engineers', 'Kubernetes Deployment Handbook']
-    },
-    {
-      skill: 'PostgreSQL Query Tuning',
-      priority: 'High',
-      interviewFreq: 'High',
-      status: 'Locked',
-      topics: ['B-Tree vs Hash Indexes', 'EXPLAIN ANALYZE Execution Plans', 'Connection Pooling (PgBouncer)', 'N+1 Query Fixing'],
-      resources: ['Postgres Performance Essentials', 'SQL Optimization Cheat Sheet']
-    },
-    {
-      skill: 'Redis Caching Patterns',
-      priority: 'Medium',
-      interviewFreq: 'Medium',
-      status: 'Locked',
-      topics: ['Cache-Aside Pattern', 'Write-Through Caching', 'TTL & Eviction Policies (LRU)', 'Redis Data Types'],
-      resources: ['Redis In-Memory Data Store Guide', 'Caching Best Practices']
-    }
-  ],
-  learningRoadmap: {
-    duration: '4 Weeks',
-    targetRole: 'Full Stack Software Engineer',
-    roadmapProgress: 35,
-    weeks: [
-      {
-        week: 1,
-        title: 'Week 1: System Design & High-Scale Architecture',
-        focus: 'Master client-server, load balancers, caching, and database partitioning.',
-        tasks: [
-          { id: 't1', name: 'Study Client-Server vs Microservices Architecture', done: true },
-          { id: 't2', name: 'Understand Redis Caching Strategies (Cache-Aside, Write-Through)', done: true },
-          { id: 't3', name: 'Design a scalable URL Shortener system (TinyURL architecture)', done: false }
-        ]
-      },
-      {
-        week: 2,
-        title: 'Week 2: DevOps, Docker & Containerization',
-        focus: 'Learn Dockerfiles, Docker Compose multi-container stacks, and GitHub Actions CI/CD.',
-        tasks: [
-          { id: 't4', name: 'Containerize a React + FastAPI + Postgres stack using Docker Compose', done: false },
-          { id: 't5', name: 'Write GitHub Actions workflow for automated testing & Vercel deployment', done: false }
-        ]
-      },
-      {
-        week: 3,
-        title: 'Week 3: Advanced Database Systems & Performance',
-        focus: 'Master PostgreSQL B-Tree indexing, execution plans, and ORM query optimization.',
-        tasks: [
-          { id: 't6', name: 'Identify and resolve N+1 query performance bottlenecks in backend ORMs', done: false },
-          { id: 't7', name: 'Implement database indexing benchmark tests with EXPLAIN ANALYZE', done: false }
-        ]
-      },
-      {
-        week: 4,
-        title: 'Week 4: AI Mock Interviews & Capstone Portfolio',
-        focus: 'Practice technical coding rounds, behavioral STAR responses, and project showcases.',
-        tasks: [
-          { id: 't8', name: 'Complete 3 AI Mock Interview rounds with PlaceAI Coach', done: false },
-          { id: 't9', name: 'Polish GitHub repositories & publish live project demo link', done: false }
-        ]
-      }
-    ]
-  }
-};
-
 const SessionContext = createContext();
 
 export const useSession = () => useContext(SessionContext);
@@ -154,20 +10,20 @@ export const SessionProvider = ({ children }) => {
   const [profile, setProfile] = useState(() => {
     const saved = localStorage.getItem('placeai_profile');
     return saved ? JSON.parse(saved) : {
-      name: 'Shiva Reddy',
-      email: 'shiva.reddy@placeai.co',
+      name: 'Guest Student',
+      email: 'guest.student@placeai.co',
       targetCompany: 'Google',
       preferredRole: 'Software Engineer',
       preferredLanguage: 'JavaScript',
-      theme: 'light',
+      theme: 'dark',
       notificationsEnabled: true
     };
   });
 
-  // 2. Active Session state (defaults to DEFAULT_DEMO_SESSION)
+  // 2. Active Session state
   const [session, setSession] = useState(() => {
     const saved = localStorage.getItem('placeai_session');
-    return saved ? JSON.parse(saved) : DEFAULT_DEMO_SESSION;
+    return saved ? JSON.parse(saved) : null;
   });
 
   // 3. Active Running Jobs
