@@ -195,16 +195,16 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="dashboard-dark-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', minHeight: '100%' }}>
+    <div className="dashboard-dark-container" style={{ display: 'flex', flexDirection: 'column', gap: '2.25rem', width: '100%', minHeight: '100%' }}>
       <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileChange} accept=".pdf,.docx,.txt" />
 
       {/* ─── HORIZONTAL HEADER BAR ───────────────────────────────── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#161925', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', padding: '0.85rem 1.5rem', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontWeight: '900', fontSize: '1.15rem' }}>⚡</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#161925', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '1rem 1.75rem', boxShadow: '0 6px 24px rgba(0,0,0,0.18)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontWeight: '900', fontSize: '1.25rem' }}>⚡</div>
           <div>
-            <span style={{ fontWeight: '900', fontSize: '1.25rem', color: '#ffffff', letterSpacing: '-0.02em' }}>PlaceAI</span>
-            <span style={{ display: 'block', fontSize: '0.62rem', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '-2px' }}>AI Placement Assistant</span>
+            <span style={{ fontWeight: '900', fontSize: '1.3rem', color: '#ffffff', letterSpacing: '-0.02em' }}>PlaceAI</span>
+            <span style={{ display: 'block', fontSize: '0.65rem', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '-1px' }}>AI Placement Assistant</span>
           </div>
         </div>
 
@@ -219,10 +219,10 @@ export default function Dashboard() {
                 border: '1px solid rgba(255,255,255,0.08)',
                 color: '#ffffff',
                 borderRadius: '10px',
-                width: '38px',
-                height: '38px',
+                width: '40px',
+                height: '40px',
                 cursor: 'pointer',
-                fontSize: '1.05rem',
+                fontSize: '1.1rem',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -233,7 +233,7 @@ export default function Dashboard() {
             >
               🔔
               {notifications && notifications.filter(n => !n.read).length > 0 && (
-                <span style={{ position: 'absolute', top: '-2px', right: '-2px', background: '#ef4444', color: '#ffffff', fontSize: '0.55rem', fontWeight: '900', borderRadius: '50%', width: '15px', height: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ position: 'absolute', top: '-2px', right: '-2px', background: '#ef4444', color: '#ffffff', fontSize: '0.55rem', fontWeight: '900', borderRadius: '50%', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {notifications.filter(n => !n.read).length}
                 </span>
               )}
@@ -243,33 +243,33 @@ export default function Dashboard() {
             {showNotifications && (
               <div style={{
                 position: 'absolute',
-                top: '45px',
+                top: '48px',
                 right: '0',
                 background: '#161925',
                 border: '1px solid #2d3342',
-                borderRadius: '12px',
-                width: '280px',
-                boxShadow: '0 10px 25px rgba(0, 0, 0, 0.3)',
+                borderRadius: '14px',
+                width: '300px',
+                boxShadow: '0 12px 30px rgba(0, 0, 0, 0.4)',
                 zIndex: 1001,
-                padding: '0.75rem'
+                padding: '0.85rem'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.4rem', marginBottom: '0.4rem' }}>
-                  <span style={{ fontWeight: '800', fontSize: '0.75rem', color: '#ffffff' }}>Notifications</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}>
+                  <span style={{ fontWeight: '800', fontSize: '0.8rem', color: '#ffffff' }}>Notifications</span>
                   <button
                     onClick={() => { setNotifications([]); setShowNotifications(false); }}
-                    style={{ background: 'none', border: 'none', color: '#a5b4fc', fontSize: '0.62rem', fontWeight: '800', cursor: 'pointer' }}
+                    style={{ background: 'none', border: 'none', color: '#a5b4fc', fontSize: '0.68rem', fontWeight: '800', cursor: 'pointer' }}
                   >
                     Clear All
                   </button>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '180px', overflowY: 'auto' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '200px', overflowY: 'auto' }}>
                   {(!notifications || notifications.length === 0) ? (
-                    <div style={{ padding: '0.5rem', textAlign: 'center', color: '#64748b', fontSize: '0.68rem' }}>No new notifications</div>
+                    <div style={{ padding: '0.5rem', textAlign: 'center', color: '#64748b', fontSize: '0.72rem' }}>No new notifications</div>
                   ) : (
                     notifications.map(n => (
-                      <div key={n.id} style={{ padding: '0.45rem', background: '#1e2233', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <p style={{ margin: 0, fontSize: '0.68rem', color: '#e2e8f0', lineHeight: 1.35 }}>{n.text}</p>
-                        <span style={{ fontSize: '0.55rem', color: '#64748b', marginTop: '2px', display: 'block' }}>{n.time}</span>
+                      <div key={n.id} style={{ padding: '0.55rem', background: '#1e2233', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <p style={{ margin: 0, fontSize: '0.72rem', color: '#e2e8f0', lineHeight: 1.35 }}>{n.text}</p>
+                        <span style={{ fontSize: '0.6rem', color: '#64748b', marginTop: '3px', display: 'block' }}>{n.time}</span>
                       </div>
                     ))
                   )}
@@ -278,7 +278,7 @@ export default function Dashboard() {
             )}
           </div>
 
-          <button style={{ background: '#12141f', border: '1px solid rgba(255,255,255,0.08)', color: '#e2e8f0', borderRadius: '10px', padding: '0.5rem 1.1rem', cursor: 'pointer', fontSize: '0.78rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <button style={{ background: '#12141f', border: '1px solid rgba(255,255,255,0.08)', color: '#e2e8f0', borderRadius: '10px', padding: '0.55rem 1.25rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             📥 Export Report
           </button>
           
@@ -289,9 +289,9 @@ export default function Dashboard() {
               border: '1px solid rgba(239, 68, 68, 0.25)',
               color: '#f87171',
               borderRadius: '10px',
-              padding: '0.5rem 1.1rem',
+              padding: '0.55rem 1.25rem',
               cursor: 'pointer',
-              fontSize: '0.78rem',
+              fontSize: '0.82rem',
               fontWeight: '800',
               display: 'flex',
               alignItems: 'center',
@@ -305,40 +305,39 @@ export default function Dashboard() {
             🔄 Reset Session
           </button>
 
-          <button onClick={triggerUpload} style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#ffffff', border: 'none', borderRadius: '10px', padding: '0.5rem 1.25rem', cursor: 'pointer', fontSize: '0.78rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.4rem', boxShadow: '0 4px 12px rgba(99,102,241,0.2)' }}>
+          <button onClick={triggerUpload} style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#ffffff', border: 'none', borderRadius: '10px', padding: '0.55rem 1.4rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.4rem', boxShadow: '0 4px 14px rgba(99,102,241,0.25)' }}>
             ☁️ Upload Resume
           </button>
-          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontWeight: '800', fontSize: '0.95rem' }}>{d_name[0].toUpperCase()}</div>
         </div>
       </div>
 
       {/* ─── WELCOME SUBHEADER ────────────────────────────────────── */}
-      <div>
-        <h2 style={{ fontSize: '1.75rem', fontWeight: '900', color: '#ffffff', margin: 0, letterSpacing: '-0.02em' }}>
+      <div style={{ marginBottom: '0.25rem' }}>
+        <h2 style={{ fontSize: '1.85rem', fontWeight: '900', color: '#ffffff', margin: 0, letterSpacing: '-0.02em' }}>
           {greeting}, <span style={{ color: '#8b5cf6' }}>{d_name}!</span> 👋
         </h2>
-        <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '3px 0 0 0', fontWeight: '600' }}>Your placement journey, intelligently organized.</p>
+        <p style={{ fontSize: '0.88rem', color: '#94a3b8', margin: '4px 0 0 0', fontWeight: '600' }}>Your placement journey, intelligently organized.</p>
       </div>
 
       {/* ─── ROW 1: HERO BANNER & RESUME READINESS ─────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.7fr) minmax(340px, 0.9fr)', gap: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.6fr) minmax(360px, 1fr)', gap: '1.75rem' }}>
         
         {/* Left: Illustrated Hero Card */}
-        <div className="dark-dashboard-card" style={{ display: 'flex', background: 'linear-gradient(135deg, #1b1642 0%, #0e0d22 100%)', border: '1px solid #4f46e5', position: 'relative', overflow: 'hidden', minHeight: '190px' }}>
+        <div className="dark-dashboard-card" style={{ display: 'flex', background: 'linear-gradient(135deg, #1b1642 0%, #0e0d22 100%)', border: '1px solid #4f46e5', position: 'relative', overflow: 'hidden', minHeight: '175px', padding: '1.5rem 2rem' }}>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', zIndex: 1, paddingRight: '1rem' }}>
-            <span style={{ display: 'inline-flex', width: 'fit-content', background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)', color: '#a5b4fc', fontSize: '0.62rem', fontWeight: '900', padding: '0.25rem 0.65rem', borderRadius: '999px', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+            <span style={{ display: 'inline-flex', width: 'fit-content', background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)', color: '#a5b4fc', fontSize: '0.65rem', fontWeight: '900', padding: '0.25rem 0.75rem', borderRadius: '999px', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
               ✨ PlaceAI - Your Placement Assistant
             </span>
-            <h3 style={{ fontSize: '1.85rem', fontWeight: '900', color: '#ffffff', margin: '0 0 0.35rem 0', lineHeight: 1.1, letterSpacing: '-0.03em' }}>
+            <h3 style={{ fontSize: '1.75rem', fontWeight: '900', color: '#ffffff', margin: '0 0 0.25rem 0', lineHeight: 1.15, letterSpacing: '-0.03em' }}>
               Understand where you stand.
             </h3>
-            <h3 style={{ fontSize: '1.85rem', fontWeight: '900', background: 'linear-gradient(to right, #818cf8, #c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: '0 0 0.75rem 0', lineHeight: 1.1, letterSpacing: '-0.03em' }}>
+            <h3 style={{ fontSize: '1.75rem', fontWeight: '900', background: 'linear-gradient(to right, #818cf8, #c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: '0 0 0.65rem 0', lineHeight: 1.15, letterSpacing: '-0.03em' }}>
               Build where you want to go.
             </h3>
-            <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '0 0 1rem 0', lineHeight: 1.45, maxWidth: '440px' }}>
+            <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: '0 0 1.1rem 0', lineHeight: 1.45, maxWidth: '440px' }}>
               Analyze your profile and get a personalized path to placement readiness.
             </p>
-            <button onClick={triggerUpload} style={{ background: '#6366f1', color: '#ffffff', border: 'none', borderRadius: '10px', padding: '0.55rem 1.35rem', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', width: 'fit-content', boxShadow: '0 4px 10px rgba(99,102,241,0.25)', transition: 'all 0.2s' }}>
+            <button onClick={triggerUpload} style={{ background: '#6366f1', color: '#ffffff', border: 'none', borderRadius: '10px', padding: '0.6rem 1.4rem', fontSize: '0.82rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', width: 'fit-content', boxShadow: '0 4px 12px rgba(99,102,241,0.3)', transition: 'all 0.2s' }}>
               Analyze My Resume ➔
             </button>
           </div>
@@ -373,76 +372,76 @@ export default function Dashboard() {
       </div>
 
       {/* ─── ROW 2: KPI METRIC CARDS ───────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.85rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1.25rem' }}>
         
         {/* Card 1: Target Role */}
-        <div className="dark-dashboard-card" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 1rem' }}>
-          <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justify: 'center', fontSize: '1.15rem', flexShrink: 0, justifyContent: 'center' }}>💼</div>
+        <div className="dark-dashboard-card" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '1.15rem 1.25rem' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>💼</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ fontSize: '0.62rem', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Target Role</span>
-            <div style={{ fontSize: '0.85rem', fontWeight: '900', color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{selectedRole}</div>
-            <div style={{ display: 'flex', justify: 'space-between', alignItems: 'center', marginTop: '1px' }}>
-              <span style={{ fontSize: '0.62rem', color: '#64748b' }}>Full Stack Dev</span>
-              <button onClick={() => setShowRoleModal(true)} style={{ background: 'none', border: 'none', color: '#818cf8', fontSize: '0.62rem', fontWeight: '800', padding: 0, cursor: 'pointer' }}>Change ➔</button>
+            <span style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Target Role</span>
+            <div style={{ fontSize: '0.9rem', fontWeight: '900', color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{selectedRole}</div>
+            <div style={{ display: 'flex', justify: 'space-between', alignItems: 'center', marginTop: '2px' }}>
+              <span style={{ fontSize: '0.65rem', color: '#64748b' }}>Full Stack Dev</span>
+              <button onClick={() => setShowRoleModal(true)} style={{ background: 'none', border: 'none', color: '#818cf8', fontSize: '0.65rem', fontWeight: '800', padding: 0, cursor: 'pointer' }}>Change ➔</button>
             </div>
           </div>
         </div>
 
         {/* Card 2: Resumes Analyzed */}
-        <div className="dark-dashboard-card" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 1rem' }}>
-          <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.2)', display: 'flex', alignItems: 'center', justify: 'center', fontSize: '1.15rem', flexShrink: 0, justifyContent: 'center' }}>📄</div>
+        <div className="dark-dashboard-card" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '1.15rem 1.25rem' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>📄</div>
           <div style={{ flex: 1 }}>
-            <span style={{ fontSize: '0.62rem', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Resumes Analyzed</span>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
-              <span style={{ fontSize: '1.2rem', fontWeight: '900', color: '#ffffff' }}>{history.length}</span>
-              <span style={{ fontSize: '0.62rem', color: '#34d399', fontWeight: '700' }}>↑ 3 this week</span>
+            <span style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Resumes Analyzed</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
+              <span style={{ fontSize: '1.3rem', fontWeight: '900', color: '#ffffff' }}>{history.length}</span>
+              <span style={{ fontSize: '0.65rem', color: '#34d399', fontWeight: '700' }}>↑ 3 this week</span>
             </div>
-            <div style={{ marginTop: '2px' }}><Sparkline color="#a855f7" up={true} /></div>
+            <div style={{ marginTop: '3px' }}><Sparkline color="#a855f7" up={true} /></div>
           </div>
         </div>
 
         {/* Card 3: Skills Extracted */}
-        <div className="dark-dashboard-card" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 1rem' }}>
-          <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.2)', display: 'flex', alignItems: 'center', justify: 'center', fontSize: '1.15rem', flexShrink: 0, justifyContent: 'center' }}>🧠</div>
+        <div className="dark-dashboard-card" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '1.15rem 1.25rem' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>🧠</div>
           <div style={{ flex: 1 }}>
-            <span style={{ fontSize: '0.62rem', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Skills Extracted</span>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
-              <span style={{ fontSize: '1.2rem', fontWeight: '900', color: '#ffffff' }}>{session ? (session.extractedSkills?.length || 0) : 0}</span>
-              <span style={{ fontSize: '0.62rem', color: '#34d399', fontWeight: '700' }}>↑ 15 this week</span>
+            <span style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Skills Extracted</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
+              <span style={{ fontSize: '1.3rem', fontWeight: '900', color: '#ffffff' }}>{session ? (session.extractedSkills?.length || 0) : 0}</span>
+              <span style={{ fontSize: '0.65rem', color: '#34d399', fontWeight: '700' }}>↑ 15 this week</span>
             </div>
-            <div style={{ marginTop: '2px' }}><Sparkline color="#3b82f6" up={true} /></div>
+            <div style={{ marginTop: '3px' }}><Sparkline color="#3b82f6" up={true} /></div>
           </div>
         </div>
 
         {/* Card 4: Job Matches */}
-        <div className="dark-dashboard-card" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 1rem' }}>
-          <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)', display: 'flex', alignItems: 'center', justify: 'center', fontSize: '1.15rem', flexShrink: 0, justifyContent: 'center' }}>🎯</div>
+        <div className="dark-dashboard-card" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '1.15rem 1.25rem' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>🎯</div>
           <div style={{ flex: 1 }}>
-            <span style={{ fontSize: '0.62rem', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Job Matches</span>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
-              <span style={{ fontSize: '1.2rem', fontWeight: '900', color: '#ffffff' }}>{session ? (session.jobMatches?.length || 8) : 0}</span>
-              <span style={{ fontSize: '0.62rem', color: '#34d399', fontWeight: '700' }}>↑ 2 this week</span>
+            <span style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Job Matches</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
+              <span style={{ fontSize: '1.3rem', fontWeight: '900', color: '#ffffff' }}>{session ? (session.jobMatches?.length || 8) : 0}</span>
+              <span style={{ fontSize: '0.65rem', color: '#34d399', fontWeight: '700' }}>↑ 2 this week</span>
             </div>
-            <div style={{ marginTop: '2px' }}><Sparkline color="#10b981" up={true} /></div>
+            <div style={{ marginTop: '3px' }}><Sparkline color="#10b981" up={true} /></div>
           </div>
         </div>
 
         {/* Card 5: Average Readiness */}
-        <div className="dark-dashboard-card" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 1rem' }}>
-          <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', alignItems: 'center', justify: 'center', fontSize: '1.15rem', flexShrink: 0, justifyContent: 'center' }}>📈</div>
+        <div className="dark-dashboard-card" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '1.15rem 1.25rem' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>📈</div>
           <div style={{ flex: 1 }}>
-            <span style={{ fontSize: '0.62rem', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Average Readiness</span>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
-              <span style={{ fontSize: '1.2rem', fontWeight: '900', color: '#ffffff' }}>{session ? `${session.placementReadiness || 76}%` : '0%'}</span>
-              <span style={{ fontSize: '0.62rem', color: '#34d399', fontWeight: '700' }}>↑ 8% this week</span>
+            <span style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Average Readiness</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
+              <span style={{ fontSize: '1.3rem', fontWeight: '900', color: '#ffffff' }}>{session ? `${session.placementReadiness || 76}%` : '0%'}</span>
+              <span style={{ fontSize: '0.65rem', color: '#34d399', fontWeight: '700' }}>↑ 8% this week</span>
             </div>
-            <div style={{ marginTop: '2px' }}><Sparkline color="#f59e0b" up={true} /></div>
+            <div style={{ marginTop: '3px' }}><Sparkline color="#f59e0b" up={true} /></div>
           </div>
         </div>
       </div>
 
       {/* ─── ROW 3: PLACEMENT JOURNEY & NEXT BEST ACTION/SKILL GAPS ─── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(360px, 0.8fr)', gap: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.25fr) minmax(360px, 0.75fr)', gap: '1.75rem' }}>
         
         {/* Left Column: Placement Journey */}
         <div className="dark-dashboard-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', justifyContent: 'center' }}>

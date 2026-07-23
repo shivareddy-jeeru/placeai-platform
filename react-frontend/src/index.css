@@ -1178,18 +1178,18 @@ body {
 
 .dark-dashboard-card {
   background: rgba(22, 26, 38, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3);
-  padding: 1.25rem;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.35);
+  padding: 1.5rem 1.75rem;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
   color: #f8f9fa;
 }
 
 .dark-dashboard-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(99, 102, 241, 0.25);
-  box-shadow: 0 15px 30px -5px rgba(99, 102, 241, 0.05);
+  transform: translateY(-3px);
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: 0 15px 35px -5px rgba(99, 102, 241, 0.1);
 }
 
 /* Infinite Flow Feature Marquee */
