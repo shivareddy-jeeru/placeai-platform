@@ -27,32 +27,25 @@ function AppLayout() {
     {
       group: '🏠 MY PLACEMENT JOURNEY',
       links: [
-        { path: '/', label: 'My Placement Journey', icon: '⚡' }
+        { path: '/', label: 'Dashboard', icon: '⚡' }
       ]
     },
     {
       group: '🎯 MY PREPARATION',
       links: [
-        { path: '/todays-plan', label: "Today's Checklist", icon: '🎯' },
-        { path: '/learning-roadmap', label: 'Learning Roadmap', icon: '🗺️' },
-        { path: '/skills', label: 'Skill Gaps & Radar', icon: '⚡' },
-        { path: '/progress', label: 'Progress Analytics', icon: '📈' }
-      ]
-    },
-    {
-      group: '💼 CAREER TOOLS',
-      links: [
         { path: '/resume', label: 'Resume Analyzer', icon: '📄' },
-        { path: '/matcher', label: 'Job Matcher & Targets', icon: '💼' }
+        { path: '/job-matcher', label: 'Job Matcher', icon: '💼' },
+        { path: '/skill-gap', label: 'Skill Gap Analysis', icon: '⚡' },
+        { path: '/roadmap', label: 'Learning Roadmap', icon: '🗺️' }
       ]
     },
     {
       group: '🧠 PRACTICE & AI',
       links: [
-        { path: '/interview', label: 'AI Mock Interview', icon: '🎤' },
-        { path: '/achievements', label: 'Milestones & Badges', icon: '🏆' },
-        { path: '/assistant', label: 'AI Placement Mentor', icon: '✨' },
-        { path: '/settings', label: 'Profile Settings', icon: '⚙️' }
+        { path: '/interview', label: 'AI Interview Coach', icon: '🎤' },
+        { path: '/company-research', label: 'Company Research', icon: '🏢' },
+        { path: '/mentor', label: 'AI Mentor', icon: '✨' },
+        { path: '/settings', label: 'Settings', icon: '⚙️' }
       ]
     }
   ];
@@ -148,15 +141,20 @@ function AppLayout() {
       }}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/todays-plan" element={<TodaysPlan />} />
           <Route path="/resume" element={<ResumeAnalyzer />} />
+          <Route path="/job-matcher" element={<JobMatcher />} />
           <Route path="/matcher" element={<JobMatcher />} />
+          <Route path="/skill-gap" element={<SkillGapAnalysis />} />
           <Route path="/skills" element={<SkillGapAnalysis />} />
+          <Route path="/roadmap" element={<LearningRoadmap />} />
           <Route path="/learning-roadmap" element={<LearningRoadmap />} />
           <Route path="/interview" element={<InterviewCoach />} />
+          <Route path="/company-research" element={<CompanyResearch />} />
+          <Route path="/mentor" element={<PlacementAssistant />} />
+          <Route path="/assistant" element={<PlacementAssistant />} />
+          <Route path="/todays-plan" element={<TodaysPlan />} />
           <Route path="/progress" element={<ProgressAnalytics />} />
           <Route path="/achievements" element={<AchievementsView />} />
-          <Route path="/assistant" element={<PlacementAssistant />} />
           <Route path="/settings" element={<SettingsView />} />
         </Routes>
       </main>

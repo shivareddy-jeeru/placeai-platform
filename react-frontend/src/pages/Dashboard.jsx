@@ -24,7 +24,7 @@ export default function Dashboard() {
 
   const activeData = session || DEFAULT_DEMO_SESSION;
 
-  const runningJob = Object.values(activeJobs || {})[0];
+  const runningJob = Object.values(activeJobs)[0];
   if (runningJob) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', flexDirection: 'column', gap: '1.25rem', background: '#0f1117', width: '100%', padding: '2rem', color: '#ffffff' }}>

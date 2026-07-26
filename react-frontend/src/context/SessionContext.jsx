@@ -6,7 +6,7 @@ import { EVENTS } from '../utils/eventEmitter';
 
 const SessionContext = createContext();
 
-export const initialPlacementProfile = {
+const baseProfile = {
   identity: {
     name: 'Shiva',
     targetRole: 'Software Engineer',
@@ -41,13 +41,17 @@ export const initialPlacementProfile = {
     completed: true,
     currentStep: 3
   },
-  achievements: [],
   dailyPlan: [
     { id: 'dsa-arrays', title: 'Solve 2 Medium Array & Tree Problems', category: 'DSA', duration: 25, completed: false },
     { id: 'resume-impact', title: 'Improve Resume Impact Statements', category: 'Resume', duration: 10, completed: true },
     { id: 'interview-prep', title: 'Practice 5 Behavioral Interview Questions', category: 'Interview', duration: 20, completed: false }
-  ],
-  nextAction: null
+  ]
+};
+
+export const initialPlacementProfile = {
+  ...baseProfile,
+  nextAction: calculateNextBestAction(baseProfile),
+  achievements: checkAchievements(baseProfile)
 };
 
 export const DEFAULT_DEMO_SESSION = initialPlacementProfile;
@@ -58,13 +62,16 @@ export const SessionProvider = ({ children }) => {
       const saved = localStorage.getItem('placeai_placement_profile');
       if (saved) {
         const parsed = JSON.parse(saved);
-        return {
+        const merged = {
           ...initialPlacementProfile,
           ...parsed,
           scores: { ...initialPlacementProfile.scores, ...(parsed.scores || {}) },
           progress: { ...initialPlacementProfile.progress, ...(parsed.progress || {}) },
           journey: { ...initialPlacementProfile.journey, ...(parsed.journey || {}) }
         };
+        merged.nextAction = calculateNextBestAction(merged);
+        merged.achievements = checkAchievements(merged);
+        return merged;
       }
     } catch (e) {
       console.error("Failed loading placement profile from localStorage", e);
@@ -74,21 +81,14 @@ export const SessionProvider = ({ children }) => {
 
   const [toasts, setToasts] = useState([]);
 
-  // Recalculate next action & achievements whenever profile updates
+  // Save to localStorage safely when placementProfile changes
   useEffect(() => {
-    const nextAct = calculateNextBestAction(placementProfile);
-    const achs = checkAchievements(placementProfile);
-    setPlacementProfile(prev => ({
-      ...prev,
-      nextAction: nextAct,
-      achievements: achs
-    }));
     try {
       localStorage.setItem('placeai_placement_profile', JSON.stringify(placementProfile));
     } catch (e) {
       console.error(e);
     }
-  }, [placementProfile.scores?.readiness, placementProfile.progress?.dsaProblemsSolved, placementProfile.progress?.interviewsCompleted]);
+  }, [placementProfile]);
 
   const showToast = (message, type = 'success') => {
     const id = Date.now();
@@ -129,13 +129,18 @@ export const SessionProvider = ({ children }) => {
       const newReadiness = calculateReadiness(updatedScores, prev.consistency);
       updatedScores.readiness = newReadiness;
 
-      return {
+      const nextState = {
         ...prev,
         identity: { ...prev.identity, ...(payload.identity || {}) },
         scores: updatedScores,
         progress: updatedProgress,
         journey: updatedJourney
       };
+
+      nextState.nextAction = calculateNextBestAction(nextState);
+      nextState.achievements = checkAchievements(nextState);
+
+      return nextState;
     });
   };
 
@@ -151,10 +156,13 @@ export const SessionProvider = ({ children }) => {
       if (completedTask && completedTask.completed) {
         dispatchEvent(EVENTS.TASK_COMPLETED, { category: completedTask.category });
       }
-      return {
+      const nextState = {
         ...prev,
         dailyPlan: updatedPlan
       };
+      nextState.nextAction = calculateNextBestAction(nextState);
+      nextState.achievements = checkAchievements(nextState);
+      return nextState;
     });
   };
 
@@ -213,8 +221,7 @@ export const SessionProvider = ({ children }) => {
               pointerEvents: 'auto',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.75rem',
-              animation: 'fadeInUp 0.3s ease'
+              gap: '0.75rem'
             }}
           >
             <span>{t.type === 'info' ? 'ℹ️' : '✅'}</span>
