@@ -16,7 +16,13 @@ const Sparkline = ({ color = '#6366f1', up = true }) => {
 };
 
 export default function Dashboard() {
-  const { profile, session, activeJobs, startNewAnalysis } = useSession();
+  const { profile, session, activeJobs, startNewAnalysis, resetSession } = useSession();
+
+  const handleResetSession = () => {
+    if (window.confirm("Are you sure you want to reset your placement session metrics back to default profile?")) {
+      resetSession();
+    }
+  };
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -96,7 +102,26 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <button
+            onClick={handleResetSession}
+            style={{
+              background: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid rgba(239, 68, 68, 0.35)',
+              color: '#ef4444',
+              borderRadius: '12px',
+              padding: '0.7rem 1.1rem',
+              fontSize: '0.88rem',
+              fontWeight: '800',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem'
+            }}
+          >
+            🔄 Reset Session
+          </button>
+
           <button
             onClick={() => setShowAnalysisHub(true)}
             style={{
