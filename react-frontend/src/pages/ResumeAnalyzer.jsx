@@ -8,6 +8,7 @@ export default function ResumeAnalyzer() {
   const fileInputRef = useRef(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [fixing, setFixing] = useState(false);
+  const [showFixDetails, setShowFixDetails] = useState(false);
 
   const scores = placementProfile?.scores || {};
   const currentScore = scores.resume !== undefined ? scores.resume : 84;
@@ -18,6 +19,27 @@ export default function ResumeAnalyzer() {
     { label: 'Action Verb & Impact Metrics', val: currentScore >= 90 ? 88 : 62, color: currentScore >= 90 ? '#10b981' : '#ef4444' },
     { label: 'Section Balance & Structure', val: 91, color: '#10b981' },
     { label: 'Target Keyword Density', val: currentScore >= 90 ? 89 : 73, color: '#f59e0b' }
+  ];
+
+  const fixesApplied = [
+    {
+      category: '📊 Quantified Impact Rewrites',
+      before: 'Developed a student placement platform using React and Python.',
+      after: 'Engineered high-performance web platform serving 500+ students using React 18 & FastAPI, reducing API latency by 40%.',
+      impact: '+12% Action Verb Score'
+    },
+    {
+      category: '⚡ Strong Active Verbs',
+      before: 'Worked on database queries and API integration.',
+      after: 'Architected RESTful API endpoints and optimized PostgreSQL B-Tree query indexes for sub-50ms lookup times.',
+      impact: '+8% Technical Alignment'
+    },
+    {
+      category: '🔑 Target Keyword Density',
+      before: 'Missing key ATS phrases for SDE-1 role.',
+      after: 'Integrated target ATS keywords: "System Design", "Microservices", "Docker", "CI/CD Pipelines".',
+      impact: '+6% Keyword Match'
+    }
   ];
 
   const handleFileChange = async (e) => {
@@ -33,6 +55,7 @@ export default function ResumeAnalyzer() {
     setTimeout(() => {
       dispatchEvent(EVENTS.RESUME_ANALYZED, { action: 'FIX' });
       setFixing(false);
+      setShowFixDetails(true);
     }, 1000);
   };
 
@@ -85,9 +108,17 @@ export default function ResumeAnalyzer() {
 
         {/* RIGHT: 5 SUB-METRIC METERS */}
         <div style={{ background: '#161925', border: '1px solid #2d3342', borderRadius: '24px', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-          <h4 style={{ fontSize: '1.1rem', fontWeight: '900', color: '#ffffff', margin: 0 }}>
-            Detailed ATS Sub-Metric Breakdown
-          </h4>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h4 style={{ fontSize: '1.1rem', fontWeight: '900', color: '#ffffff', margin: 0 }}>
+              Detailed ATS Sub-Metric Breakdown
+            </h4>
+            <button
+              onClick={() => setShowFixDetails(prev => !prev)}
+              style={{ background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.4)', color: '#818cf8', borderRadius: '10px', padding: '0.35rem 0.75rem', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer' }}
+            >
+              {showFixDetails ? 'Hide AI Details 🔼' : 'View AI Fix Details 🔽'}
+            </button>
+          </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
             {subMeters.map(m => (
@@ -104,6 +135,48 @@ export default function ResumeAnalyzer() {
           </div>
         </div>
       </div>
+
+      {/* ─── OPTION 2: COLLAPSIBLE AI REWRITES & FIX DETAILS ─────────── */}
+      {showFixDetails && (
+        <div style={{ background: '#161925', border: '1px solid #2d3342', borderRadius: '24px', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div>
+            <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              ACTIONABLE REWRITES & FIX DETAILS
+            </span>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '900', color: '#ffffff', margin: '0.2rem 0 0.2rem 0' }}>
+              What "Fix with AI ⚡" Optimizes in Your Resume
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: 0 }}>
+              Review the exact bullet-point enhancements applied by our AI optimization engine.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {fixesApplied.map((item, idx) => (
+              <div key={idx} style={{ background: '#0f1117', border: '1px solid #2d3342', borderRadius: '16px', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.88rem', fontWeight: '900', color: '#ffffff' }}>{item.category}</span>
+                  <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#10b981', background: 'rgba(16,185,129,0.15)', padding: '0.25rem 0.65rem', borderRadius: '8px' }}>
+                    {item.impact}
+                  </span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '12px', padding: '0.85rem', fontSize: '0.82rem', color: '#fca5a5', lineHeight: 1.4 }}>
+                    <strong style={{ display: 'block', color: '#ef4444', marginBottom: '0.2rem' }}>🔴 Original Version:</strong>
+                    "{item.before}"
+                  </div>
+
+                  <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: '12px', padding: '0.85rem', fontSize: '0.82rem', color: '#6ee7b7', lineHeight: 1.4 }}>
+                    <strong style={{ display: 'block', color: '#10b981', marginBottom: '0.2rem' }}>🟢 AI Optimized Rewrite:</strong>
+                    "{item.after}"
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* DRAG AND DROP ZONE */}
       <div
