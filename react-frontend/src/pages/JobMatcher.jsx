@@ -5,43 +5,18 @@ const JobMatcher = () => {
   const { session } = useSession();
   const [selectedJobId, setSelectedJobId] = useState('job-1');
 
-  if (!session) {
-    return (
-      <div style={{ padding: '2rem 0' }}>
-        <header style={{ marginBottom: '2.5rem' }}>
-          <h1 className="page-title">💼 Job Description Matcher</h1>
-          <p className="page-subtitle">Cross-reference your active resume with custom job requirements to inspect semantic alignment and fit.</p>
-        </header>
-        
-        <div className="card" style={{
-          textAlign: 'center',
-          padding: '4rem 2rem',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '1.5rem',
-          maxWidth: '600px',
-          margin: '2rem auto'
-        }}>
-          <div style={{ fontSize: '4rem' }}>💼</div>
-          <h2>No Resume Uploaded</h2>
-          <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto' }}>
-            Upload your resume in the Resume Analyzer module first to enable job compatibility scoring.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   const defaultJobMatches = [
     {
       id: 'job-1',
+      role: 'Software Development Engineer (SDE-1)',
       title: 'Software Development Engineer (SDE-1)',
       company: 'Amazon',
       location: 'Bangalore / Remote',
+      matchPercent: 84,
       matchScore: 84,
       verdict: 'Prepare for 2 Weeks',
       verdictColor: '#f59e0b',
+      logo: '💻',
       matchingSkills: ['Python 3', 'React 18', 'RESTful APIs', 'SQL Database Queries', 'Git Version Control'],
       missingSkills: ['Docker Containerization', 'System Design & Scalability', 'AWS Cloud Services'],
       actionSteps: [
@@ -53,12 +28,15 @@ const JobMatcher = () => {
     },
     {
       id: 'job-2',
+      role: 'Digital Software Engineer',
       title: 'Digital Software Engineer',
       company: 'TCS',
       location: 'Hyderabad / Pune',
+      matchPercent: 92,
       matchScore: 92,
       verdict: 'Ready to Apply Now',
       verdictColor: '#10b981',
+      logo: '🚀',
       matchingSkills: ['Python', 'SQL', 'FastAPI', 'Data Structures', 'Git'],
       missingSkills: ['Enterprise Java', 'Unix Shell Scripting'],
       actionSteps: [
@@ -70,12 +48,15 @@ const JobMatcher = () => {
     },
     {
       id: 'job-3',
+      role: 'Advanced Application Developer',
       title: 'Advanced Application Developer',
       company: 'Accenture',
       location: 'Bangalore / Gurgaon',
+      matchPercent: 88,
       matchScore: 88,
       verdict: 'Ready to Apply Now',
       verdictColor: '#10b981',
+      logo: '⚡',
       matchingSkills: ['React 18', 'TypeScript', 'SQL', 'Git', 'Agile Principles'],
       missingSkills: ['Cloud Infrastructure', 'CI/CD Pipelines'],
       actionSteps: [
@@ -87,31 +68,46 @@ const JobMatcher = () => {
     }
   ];
 
+  const getScoreColor = (score) => {
+    if (score >= 85) return '#10b981';
+    if (score >= 70) return '#3b82f6';
+    if (score >= 50) return '#f59e0b';
+    return '#ef4444';
+  };
+
   const matches = (session && Array.isArray(session.jobMatches) && session.jobMatches.length > 0) ? session.jobMatches : defaultJobMatches;
   const selectedJob = matches.find(j => j.id === selectedJobId) || matches[0];
 
   return (
-    <div className="job-matcher">
+    <div className="job-matcher fade-in-up" style={{ padding: '2rem 0' }}>
       <header style={{ marginBottom: '2rem' }}>
-        <h1 className="page-title">💼 Job Description Matcher</h1>
-        <p className="page-subtitle">Cross-reference your active resume with custom job requirements to inspect semantic alignment and fit.</p>
+        <span style={{ fontSize: '0.75rem', color: '#818cf8', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          TARGET COMPANY INTELLIGENCE & MATCHING
+        </span>
+        <h1 className="page-title" style={{ fontSize: '2.2rem', fontWeight: '900', color: '#ffffff', margin: '0.3rem 0 0.4rem 0' }}>
+          Job Description Matcher 💼
+        </h1>
+        <p className="page-subtitle" style={{ fontSize: '0.92rem', color: '#94a3b8', margin: 0 }}>
+          Cross-reference your active resume with custom job requirements to inspect semantic alignment and fit.
+        </p>
       </header>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '2rem' }}>
         {/* Left Column: Match selection cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <h3 style={{ fontSize: '1.15rem' }}>Matched Opportunities</h3>
+          <h3 style={{ fontSize: '1.15rem', color: '#ffffff', fontWeight: '800' }}>Matched Target Opportunities</h3>
           {matches.map(job => {
             const isSelected = job.id === selectedJobId;
+            const scoreVal = job.matchPercent || job.matchScore || 80;
             return (
               <div 
                 key={job.id}
                 onClick={() => setSelectedJobId(job.id)}
                 style={{
                   padding: '1.25rem',
-                  background: isSelected ? 'rgba(59, 130, 246, 0.08)' : 'var(--bg-secondary)',
-                  border: `1px solid ${isSelected ? 'var(--accent-primary)' : 'var(--border-color)'}`,
-                  borderRadius: '12px',
+                  background: isSelected ? 'rgba(99, 102, 241, 0.15)' : '#161925',
+                  border: `1px solid ${isSelected ? '#6366f1' : '#2d3342'}`,
+                  borderRadius: '16px',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                   position: 'relative'
@@ -119,31 +115,30 @@ const JobMatcher = () => {
               >
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                   <div style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '8px',
-                    background: 'var(--bg-tertiary)',
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '12px',
+                    background: '#0f1117',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '1.25rem',
-                    color: 'var(--accent-primary)',
-                    fontWeight: 'bold',
-                    border: '1px solid var(--border-color)'
+                    fontSize: '1.3rem',
+                    color: '#6366f1',
+                    border: '1px solid #2d3342'
                   }}>
-                    {job.logo}
+                    {job.logo || '💼'}
                   </div>
                   <div>
-                    <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-primary)' }}>{job.role}</h4>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{job.company}</span>
+                    <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#ffffff', fontWeight: '800' }}>{job.role || job.title}</h4>
+                    <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{job.company}</span>
                   </div>
                   <div style={{
                     marginLeft: 'auto',
-                    fontSize: '1.1rem',
-                    fontWeight: '800',
-                    color: getScoreColor(job.matchPercent)
+                    fontSize: '1.15rem',
+                    fontWeight: '900',
+                    color: getScoreColor(scoreVal)
                   }}>
-                    {job.matchPercent}%
+                    {scoreVal}%
                   </div>
                 </div>
               </div>
@@ -152,64 +147,91 @@ const JobMatcher = () => {
         </div>
 
         {/* Right Column: Matched vs. Missing breakdown details */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          {selectedJob ? (
-            <div className="card">
-              <div className="flex-between" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1.25rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+          {selectedJob && (
+            <div style={{ background: '#161925', border: '1px solid #2d3342', borderRadius: '24px', padding: '1.75rem' }}>
+              <div style={{ borderBottom: '1px solid #2d3342', paddingBottom: '1.25rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                   <div style={{
                     width: '50px',
                     height: '50px',
-                    borderRadius: '12px',
-                    background: 'var(--bg-secondary)',
+                    borderRadius: '14px',
+                    background: '#0f1117',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '1.5rem',
-                    color: 'var(--accent-primary)',
-                    border: '1px solid var(--border-color)'
+                    fontSize: '1.6rem',
+                    border: '1px solid #2d3342'
                   }}>
-                    {selectedJob.logo}
+                    {selectedJob.logo || '💼'}
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '1.25rem', margin: 0 }}>{selectedJob.role}</h3>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{selectedJob.company}</span>
+                    <h3 style={{ fontSize: '1.3rem', margin: 0, color: '#ffffff', fontWeight: '900' }}>{selectedJob.role || selectedJob.title}</h3>
+                    <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>{selectedJob.company} • {selectedJob.location || 'Remote'}</span>
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <span style={{ display: 'block', fontSize: '1.5rem', fontWeight: '800', color: getScoreColor(selectedJob.matchPercent) }}>{selectedJob.matchPercent}% Match</span>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Compatibility Index</span>
+                  <span style={{ display: 'block', fontSize: '1.6rem', fontWeight: '900', color: getScoreColor(selectedJob.matchPercent || selectedJob.matchScore || 80) }}>
+                    {selectedJob.matchPercent || selectedJob.matchScore || 80}% Match
+                  </span>
+                  <span style={{ fontSize: '0.75rem', color: selectedJob.verdictColor || '#10b981', fontWeight: '800' }}>
+                    {selectedJob.verdict || 'Ready to Apply'}
+                  </span>
                 </div>
               </div>
 
-              {/* Matched vs Missing grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                <div>
-                  <h4 style={{ fontSize: '0.9rem', color: 'var(--success)', marginBottom: '0.75rem' }}>🟢 Matched Skills</h4>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    {selectedJob.matchedSkills.map((s, idx) => (
-                      <span key={idx} className="badge-tag match" style={{ margin: 0 }}>{s}</span>
+              {/* Match Explanation */}
+              {selectedJob.explanation && (
+                <div style={{ background: '#0f1117', border: '1px solid rgba(99, 102, 241, 0.35)', borderRadius: '16px', padding: '1.1rem', marginBottom: '1.5rem', fontSize: '0.88rem', color: '#cbd5e1', lineHeight: 1.4 }}>
+                  💡 <strong style={{ color: '#ffffff' }}>AI Match Intelligence:</strong> {selectedJob.explanation}
+                </div>
+              )}
+
+              {/* Matching Skills vs Missing Skills Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '1.5rem' }}>
+                <div style={{ background: '#0f1117', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '16px', padding: '1.25rem' }}>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: '900', color: '#34d399', margin: '0 0 0.8rem 0' }}>
+                    ✅ Matching Skills ({selectedJob.matchingSkills?.length || 0})
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                    {(selectedJob.matchingSkills || []).map((sk, idx) => (
+                      <div key={idx} style={{ fontSize: '0.82rem', color: '#ffffff', fontWeight: '600' }}>
+                        ✓ {sk}
+                      </div>
                     ))}
                   </div>
                 </div>
 
-                <div>
-                  <h4 style={{ fontSize: '0.9rem', color: 'var(--error)', marginBottom: '0.75rem' }}>🔴 Missing Tech stack</h4>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    {selectedJob.missingSkills.map((s, idx) => (
-                      <span key={idx} className="badge-tag missing" style={{ margin: 0 }}>{s}</span>
+                <div style={{ background: '#0f1117', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '16px', padding: '1.25rem' }}>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: '900', color: '#ef4444', margin: '0 0 0.8rem 0' }}>
+                    ⚠️ Your Gaps ({selectedJob.missingSkills?.length || 0})
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                    {(selectedJob.missingSkills || []).map((sk, idx) => (
+                      <div key={idx} style={{ fontSize: '0.82rem', color: '#fca5a5', fontWeight: '600' }}>
+                        ⚠️ {sk}
+                      </div>
                     ))}
                   </div>
                 </div>
               </div>
 
-              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem', marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                <button className="btn btn-secondary">📄 View Full Job description</button>
-                <button className="btn btn-primary" onClick={() => alert(`Redirecting to target application portal...`)}>🚀 Apply Now</button>
-              </div>
+              {/* Action Steps */}
+              {selectedJob.actionSteps && (
+                <div style={{ background: '#0f1117', border: '1px solid #2d3342', borderRadius: '16px', padding: '1.25rem' }}>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: '900', color: '#a5b4fc', margin: '0 0 0.7rem 0' }}>
+                    🎯 What to do before applying to {selectedJob.company}
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    {selectedJob.actionSteps.map((step, idx) => (
+                      <div key={idx} style={{ fontSize: '0.82rem', color: '#ffffff', fontWeight: '600' }}>
+                        <span style={{ color: '#818cf8', fontWeight: '900' }}>{idx + 1}.</span> {step}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          ) : (
-            <p>Select a job role from the matched list to inspect compatibility breakdown.</p>
           )}
         </div>
       </div>
