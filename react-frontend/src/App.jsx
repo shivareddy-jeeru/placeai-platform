@@ -12,6 +12,7 @@ import ProgressAnalytics from './pages/ProgressAnalytics';
 import AchievementsView from './pages/AchievementsView';
 import PlacementAssistant from './pages/PlacementAssistant';
 import SettingsView from './pages/SettingsView';
+import CompanyResearch from './pages/CompanyResearch';
 import MentorBar from './components/MentorBar';
 import OnboardingModal from './components/OnboardingModal';
 
