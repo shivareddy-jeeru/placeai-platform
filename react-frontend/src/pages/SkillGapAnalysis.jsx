@@ -1,223 +1,49 @@
-import React, { useState } from 'react';
-import { useSession } from '../context/SessionContext';
+import React from 'react';
+import SkillMap from '../components/SkillMap';
+import { useNavigate } from 'react-router-dom';
 
-const SkillGapAnalysis = () => {
-  const { session } = useSession();
-  const [expandedSkill, setExpandedSkill] = useState(null);
-
-  if (!session) {
-    return (
-      <div style={{ padding: '2rem 0' }}>
-        <header style={{ marginBottom: '2.5rem' }}>
-          <h1 className="page-title">📊 Competency & Skill Gap Analysis</h1>
-          <p className="page-subtitle">Inspect matching credentials, pinpoint missing tech stacks, and check prioritized learning timetables.</p>
-        </header>
-        
-        <div className="card" style={{
-          textAlign: 'center',
-          padding: '4rem 2rem',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '1.5rem',
-          maxWidth: '600px',
-          margin: '2rem auto'
-        }}>
-          <div style={{ fontSize: '4rem' }}>📊</div>
-          <h2>No Resume Uploaded</h2>
-          <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto' }}>
-            Upload your resume in the Resume Analyzer module first to evaluate skill gap parameters.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'Critical': return '#ef4444';
-      case 'High': return '#f59e0b';
-      case 'Medium': return '#3b82f6';
-      default: return '#a0aec0';
-    }
-  };
-
-  const toggleExpand = (skill) => {
-    if (expandedSkill === skill) {
-      setExpandedSkill(null);
-    } else {
-      setExpandedSkill(skill);
-    }
-  };
-
-  const defaultGaps = [
-    {
-      skill: 'Docker & Containers',
-      priority: 'Critical',
-      interviewFreq: 'Very High',
-      status: 'In Progress',
-      topics: ['Images & Containers', 'Docker Compose', 'Multi-stage Builds', 'Container Networking'],
-      resources: ['Learn Docker official tutorials', 'Docker Interview Questions Guide']
-    },
-    {
-      skill: 'REST API Architecture',
-      priority: 'High',
-      interviewFreq: 'High',
-      status: 'Locked',
-      topics: ['HTTP Status Codes', 'Request Validation (Pydantic)', 'Rate Limiting', 'API Security'],
-      resources: ['FastAPI & REST Guide', 'API Design Best Practices']
-    },
-    {
-      skill: 'SQL Performance & Indexes',
-      priority: 'Critical',
-      interviewFreq: 'Very High',
-      status: 'Locked',
-      topics: ['Indexes & Execution Plans', 'Joins & Subqueries', 'Database Migrations', 'Transactions'],
-      resources: ['SQL Tuning Masterclass', 'Database Systems Core']
-    }
-  ];
-
-  const displayGaps = (session.skillGaps && session.skillGaps.length > 0) ? session.skillGaps : defaultGaps;
-  const parsedCount = session.extractedSkills ? session.extractedSkills.length : 12;
-  const gapCount = displayGaps.length;
-  const totalSkillCount = parsedCount + gapCount;
-  const matchRatio = Math.round((parsedCount / totalSkillCount) * 100);
-  const gapRatio = 100 - matchRatio;
+export default function SkillGapAnalysis() {
+  const navigate = useNavigate();
 
   return (
-    <div className="skill-gap-analysis fade-in-up">
-      <header style={{ marginBottom: '2rem' }}>
-        <h1 className="page-title">📊 Skill Gap Analysis</h1>
-        <p className="page-subtitle">Inspect matching credentials, pinpoint missing tech stacks, and check prioritized learning timetables.</p>
-      </header>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '2rem' }}>
-        {/* Left Column: Skill Gap Accordion List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {/* Latest Resume Banner */}
-          <div className="card" style={{
-            background: 'rgba(59, 130, 246, 0.05)',
-            border: '1px solid rgba(59, 130, 246, 0.2)',
-            padding: '1rem 1.5rem'
-          }}>
-            <div className="flex-between">
-              <div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block' }}>Active Audited File</span>
-                <strong style={{ fontSize: '1rem', color: 'var(--accent-primary)' }}>{session.uploadedResume?.filename || 'Resume_Parsed.pdf'}</strong>
-              </div>
-              <span className="badge-tag info">Uploaded {session.uploadedResume?.uploadDate || 'Recently'}</span>
-            </div>
-          </div>
-
-          <h3 style={{ fontSize: '1.15rem' }}>Identified Skill Gaps ({gapCount})</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-            {displayGaps.map((gap, idx) => {
-              const isExpanded = expandedSkill === gap.skill;
-              return (
-                <div key={idx} style={{
-                  background: 'var(--bg-secondary)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '12px',
-                  overflow: 'hidden',
-                  transition: 'all 0.2s ease'
-                }}>
-                  <div 
-                    onClick={() => toggleExpand(gap.skill)}
-                    style={{
-                      padding: '1.25rem 1.5rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between'
-                    }}
-                  >
-                    <div>
-                      <strong style={{ fontSize: '1.05rem', color: 'var(--text-primary)' }}>{gap.skill}</strong>
-                      <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                        <span>Interview Frequency: <strong style={{ color: 'var(--text-primary)' }}>{gap.interviewFreq}</strong></span>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                      <span className="badge-tag" style={{
-                        backgroundColor: `${getPriorityColor(gap.priority)}15`,
-                        color: getPriorityColor(gap.priority),
-                        border: `1px solid ${getPriorityColor(gap.priority)}30`,
-                        margin: 0
-                      }}>{gap.priority} Priority</span>
-                      <span style={{ fontSize: '0.85rem' }}>{isExpanded ? '▲' : '▼'}</span>
-                    </div>
-                  </div>
-
-                  {/* Accordion Expand Details */}
-                  {isExpanded && (
-                    <div style={{
-                      padding: '1.5rem',
-                      background: 'rgba(255,255,255,0.02)',
-                      borderTop: '1px solid var(--border-color)'
-                    }}>
-                      <h5 style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Core Sub-Topics:</h5>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
-                        {gap.topics && gap.topics.map((t, topicIdx) => (
-                          <span key={topicIdx} style={{
-                            background: 'var(--bg-tertiary)',
-                            color: 'var(--text-primary)',
-                            padding: '0.25rem 0.5rem',
-                            borderRadius: '4px',
-                            fontSize: '0.75rem',
-                            border: '1px solid var(--border-color)'
-                          }}>{t}</span>
-                        ))}
-                      </div>
-
-                      <h5 style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>AI Recommended Resources:</h5>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-                        <button className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '0.4rem 0.8rem' }} onClick={() => alert(`Launching YouTube playlist for: ${gap.skill}`)}>
-                          📺 Watch Playlist
-                        </button>
-                        <button className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '0.4rem 0.8rem' }} onClick={() => alert(`Opening coding problems for: ${gap.skill}`)}>
-                          ⚡ Practice Problems
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Right Column: Skill Summary statistics */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          <div className="card">
-            <h3 style={{ fontSize: '1.15rem', marginBottom: '1.25rem' }}>🛠️ Skill Distribution Profile</h3>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Overall breakdown of skills parsed from your placement credentials:</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Matching Skills (Strong)</span>
-                  <strong>{parsedCount} parsed</strong>
-                </div>
-                <div className="bar-container" style={{ margin: '0' }}>
-                  <div className="bar-value" style={{ width: `${matchRatio}%`, backgroundColor: 'var(--success)' }}></div>
-                </div>
-              </div>
-
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Identified Gaps (Missing)</span>
-                  <strong>{gapCount} gaps</strong>
-                </div>
-                <div className="bar-container" style={{ margin: '0' }}>
-                  <div className="bar-value" style={{ width: `${gapRatio}%`, backgroundColor: 'var(--error)' }}></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '1100px', margin: '0 auto', paddingBottom: '5rem' }}>
+      {/* HEADER */}
+      <div>
+        <span style={{ fontSize: '0.75rem', color: '#818cf8', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          GAP IDENTIFICATION ENGINE
+        </span>
+        <h1 style={{ fontSize: '2.2rem', fontWeight: '900', color: '#ffffff', margin: '0.3rem 0 0.4rem 0' }}>
+          Skill Gap Radar & Analysis ⚡
+        </h1>
+        <p style={{ fontSize: '0.92rem', color: '#94a3b8', margin: 0 }}>
+          Visual skill constellation divided into Strong, Developing, and Needs Attention competencies.
+        </p>
       </div>
+
+      {/* RECOMMENDED NEXT SKILL HERO CARD */}
+      <div style={{ background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1))', border: '1px solid rgba(99, 102, 241, 0.4)', borderRadius: '24px', padding: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem' }}>
+        <div>
+          <span style={{ fontSize: '0.72rem', color: '#a5b4fc', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            HIGH-VALUE RECOMMENDATION
+          </span>
+          <h3 style={{ fontSize: '1.5rem', fontWeight: '900', color: '#ffffff', margin: '0.3rem 0 0.4rem 0' }}>
+            Recommended Next Skill: System Design & Scalability (42%)
+          </h3>
+          <p style={{ fontSize: '0.9rem', color: '#cbd5e1', margin: 0, maxWidth: '600px', lineHeight: 1.4 }}>
+            System Design is currently your largest competency gap for Software Engineer roles at Amazon & TCS. Completing caching and database sharding modules will raise your overall readiness score above 80%.
+          </p>
+        </div>
+
+        <button
+          onClick={() => navigate('/learning-roadmap')}
+          style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#ffffff', border: 'none', borderRadius: '14px', padding: '0.9rem 1.8rem', fontSize: '0.9rem', fontWeight: '900', cursor: 'pointer', boxShadow: '0 4px 14px rgba(99, 102, 241, 0.4)', whiteSpace: 'nowrap' }}
+        >
+          Start System Design Path →
+        </button>
+      </div>
+
+      {/* VISUAL SKILL MAP CONSTELLATION */}
+      <SkillMap />
     </div>
   );
-};
-
-export default SkillGapAnalysis;
+}

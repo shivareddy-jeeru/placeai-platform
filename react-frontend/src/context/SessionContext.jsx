@@ -1,191 +1,95 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import api from '../utils/api';
+import { calculateReadiness } from '../utils/readinessCalculator';
+import { calculateNextBestAction } from '../utils/nextBestAction';
+import { checkAchievements } from '../utils/achievementEngine';
+import { EVENTS } from '../utils/eventEmitter';
 
 const SessionContext = createContext();
 
-export const useSession = () => useContext(SessionContext);
-
-export const DEFAULT_DEMO_SESSION = {
-  session_id: 'demo-session-101',
-  atsScore: 87,
-  placementReadiness: 84,
-  resumeName: 'Shiva_Reddy_Resume.pdf',
-  extractedSkills: [
-    'React 18', 'JavaScript (ES6+)', 'TypeScript', 'Node.js', 'Express.js',
-    'Python', 'FastAPI', 'SQL & Database Schema', 'Git', 'RESTful APIs',
-    'HTML5/CSS3', 'Tailwind CSS'
+export const initialPlacementProfile = {
+  identity: {
+    name: 'Shiva',
+    targetRole: 'Software Engineer',
+    targetCompanies: ['Amazon', 'TCS'],
+    preparationLevel: 'Intermediate'
+  },
+  scores: {
+    readiness: 72,
+    resume: 84,
+    interview: 71,
+    jobMatch: 82,
+    skills: 68
+  },
+  progress: {
+    dsaProblemsSolved: 47,
+    interviewsCompleted: 0,
+    resumesAnalyzed: 1,
+    tasksCompleted: 1
+  },
+  consistency: {
+    currentStreak: 6,
+    longestStreak: 6,
+    lastActiveDate: null
+  },
+  journey: {
+    resume: 84,
+    skills: 68,
+    preparation: 54,
+    interviews: 42
+  },
+  onboarding: {
+    completed: true,
+    currentStep: 3
+  },
+  achievements: [],
+  dailyPlan: [
+    { id: 'dsa-arrays', title: 'Solve 2 Medium Array & Tree Problems', category: 'DSA', duration: 25, completed: false },
+    { id: 'resume-impact', title: 'Improve Resume Impact Statements', category: 'Resume', duration: 10, completed: true },
+    { id: 'interview-prep', title: 'Practice 5 Behavioral Interview Questions', category: 'Interview', duration: 20, completed: false }
   ],
-  jobMatches: [
-    { id: 'job-1', company: 'Google Cloud', role: 'Frontend Engineer', score: 85, logo: '🌐' },
-    { id: 'job-2', company: 'Amazon AWS', role: 'Full Stack Engineer', score: 79, logo: '📦' },
-    { id: 'job-3', company: 'Microsoft Azure', role: 'Backend API Developer', score: 74, logo: '⚡' }
-  ],
-  skillGaps: [
-    { skill: 'System Design & Scalability', level: 'Critical', priority: 'High', interviewFreq: 'High' },
-    { skill: 'Docker & DevOps Pipelines', level: 'High', priority: 'High', interviewFreq: 'Medium' },
-    { skill: 'PostgreSQL Query Tuning', level: 'Medium', priority: 'Medium', interviewFreq: 'Medium' }
-  ],
-  learningRoadmap: {
-    roadmap_data: {
-      weeks: [
-        { week: 1, title: 'System Design Fundamentals', tasks: ['URL Shortener Architecture', 'Cache-Aside Pattern', 'Load Balancers'] },
-        { week: 2, title: 'Containerization & DevOps', tasks: ['Dockerfiles & Multi-stage Builds', 'Docker Compose Stack', 'CI/CD Pipelines'] },
-        { week: 3, title: 'Advanced Relational DBs', tasks: ['PostgreSQL B-Tree Indexing', 'EXPLAIN ANALYZE Plans', 'N+1 Query Resolution'] },
-        { week: 4, title: 'Mock Interviews & STAR Method', tasks: ['Behavioral STAR Answers', 'Technical DSA Review', 'System Design Mock'] }
-      ]
-    }
-  }
+  nextAction: null
 };
 
+export const DEFAULT_DEMO_SESSION = initialPlacementProfile;
+
 export const SessionProvider = ({ children }) => {
-  // 1. User Profile state
-  const [profile, setProfile] = useState(() => {
-    const saved = localStorage.getItem('placeai_profile');
-    return saved ? JSON.parse(saved) : {
-      name: 'Guest Student',
-      email: 'guest.student@placeai.co',
-      targetCompany: 'Google',
-      preferredRole: 'Software Engineer',
-      preferredLanguage: 'JavaScript',
-      theme: 'dark',
-      notificationsEnabled: true
-    };
+  const [placementProfile, setPlacementProfile] = useState(() => {
+    try {
+      const saved = localStorage.getItem('placeai_placement_profile');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          ...initialPlacementProfile,
+          ...parsed,
+          scores: { ...initialPlacementProfile.scores, ...(parsed.scores || {}) },
+          progress: { ...initialPlacementProfile.progress, ...(parsed.progress || {}) },
+          journey: { ...initialPlacementProfile.journey, ...(parsed.journey || {}) }
+        };
+      }
+    } catch (e) {
+      console.error("Failed loading placement profile from localStorage", e);
+    }
+    return initialPlacementProfile;
   });
 
-  // 2. Active Session state
-  const [session, setSession] = useState(() => {
-    const saved = localStorage.getItem('placeai_session');
-    return saved ? JSON.parse(saved) : null;
-  });
-
-  // 3. Active Running Jobs
-  const [activeJobs, setActiveJobs] = useState({});
-
-  // 4. AI Dynamic Notifications
-  const [notifications, setNotifications] = useState([
-    { id: 1, text: 'Welcome to PlaceAI! Upload your resume to start.', time: 'Just now', read: false }
-  ]);
-
-  // 5. Saved History
-  const [history, setHistory] = useState(() => {
-    const saved = localStorage.getItem('placeai_history');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  // 6. Toasts state
   const [toasts, setToasts] = useState([]);
 
-  // Initialize/retrieve backend session on mount
+  // Recalculate next action & achievements whenever profile updates
   useEffect(() => {
-    const initSession = async () => {
-      let sessId = localStorage.getItem('session_id');
-      if (!sessId) {
-        try {
-          const res = await api.createSession();
-          sessId = res.data.session_id;
-          localStorage.setItem('session_id', sessId);
-          console.log("Initialized new session:", sessId);
-        } catch (err) {
-          console.error("Failed to initialize session:", err);
-        }
-      }
-      
-      if (sessId) {
-        try {
-          const res = await api.getSessionDetails(sessId);
-          if (res.data && res.data.resume) {
-            const missing = res.data.match?.missing_skills || [];
-            const extracted = res.data.resume.extracted_skills || [];
-            const structuredGaps = missing.map((skillName, index) => {
-              let priority = 'Medium';
-              let freq = 'High';
-              let topics = ['Fundamentals', 'Best Practices', 'Common Interview Patterns'];
-              const lowerSkill = skillName.toLowerCase();
-              if (lowerSkill.includes('docker') || lowerSkill.includes('kubernetes') || lowerSkill.includes('container')) {
-                priority = 'Critical';
-                freq = 'Very High';
-                topics = ['Images & Containers', 'Docker Compose', 'Multi-stage Builds', 'Networking'];
-              } else if (lowerSkill.includes('api') || lowerSkill.includes('rest') || lowerSkill.includes('fastapi')) {
-                priority = 'High';
-                freq = 'High';
-                topics = ['HTTP Status Codes', 'Request Validation (Pydantic)', 'Database Integration', 'Rate Limiting'];
-              } else if (lowerSkill.includes('sql') || lowerSkill.includes('postgres') || lowerSkill.includes('db')) {
-                priority = 'Critical';
-                freq = 'Very High';
-                topics = ['Indexes & Performance', 'Joins & Subqueries', 'Migrations (Alembic)', 'Transactions'];
-              }
-              return {
-                skill: skillName,
-                priority,
-                interviewFreq: freq,
-                status: index === 0 ? 'In Progress' : 'Locked',
-                topics,
-                resources: [`Learn ${skillName} official tutorials`, `${skillName} Interview Guide`]
-              };
-            });
-
-            const augmentedMatch = res.data.match ? {
-              ...res.data.match,
-              id: res.data.match.id,
-              company: res.data.job?.company || 'Target Company',
-              role: res.data.job?.title || 'Software Engineer',
-              logo: '⚡',
-              matchPercent: res.data.match.match_percentage,
-              matchedSkills: extracted.filter(s => !missing.map(m => m.toLowerCase()).includes(s.toLowerCase())),
-              missingSkills: missing
-            } : null;
-
-            setSession({
-              sessionId: sessId,
-              uploadedResume: {
-                filename: res.data.resume.filename || "Uploaded Resume",
-                uploadDate: new Date(res.data.resume.created_at).toLocaleDateString('en-GB')
-              },
-              sessionStatus: 'Completed',
-              atsScore: res.data.resume.ats_score,
-              placementReadiness: res.data.match ? Math.round((res.data.resume.ats_score + res.data.match.match_percentage) / 2) : Math.round(res.data.resume.ats_score * 0.9),
-              extractedSkills: extracted,
-              resumeAnalysis: res.data.resume,
-              jobMatches: augmentedMatch ? [augmentedMatch] : [],
-              skillGaps: structuredGaps,
-              learningRoadmap: res.data.roadmap,
-              interviewQuestions: res.data.interview?.qna_records || [],
-              interviewResults: res.data.interview,
-              aiRecommendations: res.data.resume.improvements || [],
-              timeline: [{ time: 'Just now', event: 'Session loaded from database' }]
-            });
-          } else {
-            // Backend has no active analysis record for this session ID
-            setSession(null);
-          }
-        } catch (err) {
-          console.error("Failed to sync session details from backend:", err);
-        }
-      }
-    };
-    initSession();
-  }, []);
-
-  // Persist Profile changes
-  useEffect(() => {
-    localStorage.setItem('placeai_profile', JSON.stringify(profile));
-  }, [profile]);
-
-  // Persist Session changes
-  useEffect(() => {
-    if (session) {
-      localStorage.setItem('placeai_session', JSON.stringify(session));
-    } else {
-      localStorage.removeItem('placeai_session');
+    const nextAct = calculateNextBestAction(placementProfile);
+    const achs = checkAchievements(placementProfile);
+    setPlacementProfile(prev => ({
+      ...prev,
+      nextAction: nextAct,
+      achievements: achs
+    }));
+    try {
+      localStorage.setItem('placeai_placement_profile', JSON.stringify(placementProfile));
+    } catch (e) {
+      console.error(e);
     }
-  }, [session]);
+  }, [placementProfile.scores?.readiness, placementProfile.progress?.dsaProblemsSolved, placementProfile.progress?.interviewsCompleted]);
 
-  // Persist History changes
-  useEffect(() => {
-    localStorage.setItem('placeai_history', JSON.stringify(history));
-  }, [history]);
-
-  // Toast helper
   const showToast = (message, type = 'success') => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, message, type }]);
@@ -194,291 +98,127 @@ export const SessionProvider = ({ children }) => {
     }, 4000);
   };
 
-  // Add Dynamic Notification
-  const addNotification = (text) => {
-    setNotifications(prev => [
-      { id: Date.now(), text, time: 'Just now', read: false },
-      ...prev
-    ]);
-  };
+  const dispatchEvent = (eventType, payload = {}) => {
+    setPlacementProfile(prev => {
+      let updatedScores = { ...prev.scores };
+      let updatedProgress = { ...prev.progress };
+      let updatedJourney = { ...prev.journey };
 
-  // Run Job Helper (Simulates async processing with state updates)
-  const runJob = async (jobType, durationMs, processingCallback, successCallback, errorCallback) => {
-    const jobId = `${jobType}-${Date.now()}`;
-    setActiveJobs(prev => ({ ...prev, [jobId]: { type: jobType, status: 'Processing', progress: 0 } }));
-    
-    const steps = 5;
-    for (let i = 1; i <= steps; i++) {
-      await new Promise(r => setTimeout(r, durationMs / steps));
-      setActiveJobs(prev => {
-        if (!prev[jobId]) return prev;
-        return {
-          ...prev,
-          [jobId]: { ...prev[jobId], progress: Math.min(100, i * 20) }
-        };
-      });
-      if (processingCallback) processingCallback(i * 20);
-    }
+      if (eventType === EVENTS.RESUME_ANALYZED) {
+        updatedScores.resume = Math.min(100, (updatedScores.resume || 84) + 6);
+        updatedProgress.resumesAnalyzed = (updatedProgress.resumesAnalyzed || 1) + 1;
+        updatedJourney.resume = updatedScores.resume;
+        showToast('Resume analyzed! ATS score increased to ' + updatedScores.resume + '/100 🎉');
+      } else if (eventType === EVENTS.TASK_COMPLETED) {
+        updatedProgress.tasksCompleted = (updatedProgress.tasksCompleted || 0) + 1;
+        if (payload.category === 'DSA') {
+          updatedProgress.dsaProblemsSolved = (updatedProgress.dsaProblemsSolved || 47) + 2;
+          showToast('2 DSA problems solved! Total solved: ' + updatedProgress.dsaProblemsSolved + ' 🧠');
+        } else {
+          showToast('Preparation task completed! +3% readiness 🎯');
+        }
+      } else if (eventType === EVENTS.INTERVIEW_COMPLETED) {
+        updatedScores.interview = Math.min(100, Math.max((updatedScores.interview || 71), payload.score || 78));
+        updatedProgress.interviewsCompleted = (updatedProgress.interviewsCompleted || 0) + 1;
+        updatedJourney.interviews = updatedScores.interview;
+        showToast('Mock Interview completed! Interview score: ' + updatedScores.interview + '% 🎤');
+      } else if (eventType === EVENTS.ONBOARDING_COMPLETED) {
+        showToast('Placement goal updated for ' + (payload.targetRole || 'Software Engineer') + ' 🚀');
+      }
 
-    try {
-      const result = await successCallback();
-      setActiveJobs(prev => {
-        const copy = { ...prev };
-        delete copy[jobId];
-        return copy;
-      });
-      showToast(`${jobType} completed successfully`, 'success');
-      return result;
-    } catch (err) {
-      setActiveJobs(prev => {
-        const copy = { ...prev };
-        delete copy[jobId];
-        return copy;
-      });
-      showToast(`${jobType} failed! Please retry.`, 'error');
-      if (errorCallback) errorCallback(err);
-      throw err;
-    }
-  };
+      const newReadiness = calculateReadiness(updatedScores, prev.consistency);
+      updatedScores.readiness = newReadiness;
 
-  // Start New Analysis (Create fresh session on backend)
-  const startNewAnalysis = async (file, jobDescription = "") => {
-    const sessId = localStorage.getItem('session_id') || `sess-${Date.now()}`;
-    setSession({
-      sessionId: sessId,
-      uploadedResume: {
-        filename: file.name,
-        uploadDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-      },
-      sessionStatus: 'Processing',
-      atsScore: 0,
-      placementReadiness: 0,
-      extractedSkills: [],
-      resumeAnalysis: null,
-      jobMatches: [],
-      skillGaps: [],
-      learningRoadmap: null,
-      interviewQuestions: [],
-      interviewResults: null,
-      aiRecommendations: [],
-      timeline: [{ time: 'Just now', event: 'Resume Uploaded' }]
+      return {
+        ...prev,
+        identity: { ...prev.identity, ...(payload.identity || {}) },
+        scores: updatedScores,
+        progress: updatedProgress,
+        journey: updatedJourney
+      };
     });
+  };
 
-    try {
-      // 1. Resume Parsing & ATS
-      let resumeId = null;
-      let resumeData = null;
-      await runJob('Resume Analysis', 3000, null, async () => {
-        const res = await api.uploadResume(file);
-        resumeId = res.data.id;
-        resumeData = res.data;
-        setSession(prev => ({
-          ...prev,
-          atsScore: res.data.ats_score,
-          extractedSkills: res.data.extracted_skills || [],
-          aiRecommendations: res.data.improvements || [],
-          resumeAnalysis: res.data,
-          timeline: [...prev.timeline, { time: 'Just now', event: 'Resume ATS Analysis Completed' }]
-        }));
+  const completeTask = (taskId) => {
+    setPlacementProfile(prev => {
+      const updatedPlan = prev.dailyPlan.map(t => {
+        if (t.id === taskId) {
+          return { ...t, completed: !t.completed };
+        }
+        return t;
       });
-
-      let jobId = null;
-      let jobData = null;
-      // 2. Job Analysis (if job text is provided)
-      if (jobDescription.trim()) {
-        await runJob('Job Description Analysis', 2000, null, async () => {
-          const res = await api.analyzeJob("Target Role", "Target Company", jobDescription);
-          jobId = res.data.id;
-          jobData = res.data;
-          setSession(prev => ({
-            ...prev,
-            timeline: [...prev.timeline, { time: 'Just now', event: 'Job Requirements Extracted' }]
-          }));
-        });
+      const completedTask = updatedPlan.find(t => t.id === taskId);
+      if (completedTask && completedTask.completed) {
+        dispatchEvent(EVENTS.TASK_COMPLETED, { category: completedTask.category });
       }
-
-      // 3. Skill Gap & Job Compatibility Computation
-      if (resumeId) {
-        await runJob('Skill Gap & Job Analysis', 2000, null, async () => {
-          let matchResData = null;
-          if (jobId) {
-            const matchRes = await api.runMatch(resumeId, jobId);
-            matchResData = matchRes.data;
-          }
-          
-          const gapsRes = await api.getSkillGaps();
-          const missing = gapsRes.data.missing_skills || ['Docker & Containers', 'REST API Architecture', 'SQL Optimization'];
-          
-          const structuredGaps = missing.map((skillName, index) => {
-            let priority = 'Medium';
-            let freq = 'High';
-            let topics = ['Fundamentals', 'Best Practices', 'Common Interview Patterns'];
-            const lowerSkill = skillName.toLowerCase();
-            if (lowerSkill.includes('docker') || lowerSkill.includes('kubernetes') || lowerSkill.includes('container')) {
-              priority = 'Critical';
-              freq = 'Very High';
-              topics = ['Images & Containers', 'Docker Compose', 'Multi-stage Builds', 'Networking'];
-            } else if (lowerSkill.includes('api') || lowerSkill.includes('rest') || lowerSkill.includes('fastapi')) {
-              priority = 'High';
-              freq = 'High';
-              topics = ['HTTP Status Codes', 'Request Validation (Pydantic)', 'Database Integration', 'Rate Limiting'];
-            } else if (lowerSkill.includes('sql') || lowerSkill.includes('postgres') || lowerSkill.includes('db')) {
-              priority = 'Critical';
-              freq = 'Very High';
-              topics = ['Indexes & Performance', 'Joins & Subqueries', 'Migrations (Alembic)', 'Transactions'];
-            } else if (lowerSkill.includes('system') || lowerSkill.includes('design')) {
-              priority = 'Critical';
-              freq = 'Very High';
-              topics = ['Scalability', 'Load Balancing', 'Caching Strategies', 'Database Sharding'];
-            }
-            return {
-              skill: skillName,
-              priority,
-              interviewFreq: freq,
-              status: index === 0 ? 'In Progress' : 'Locked',
-              topics,
-              resources: [`Learn ${skillName} official tutorials`, `${skillName} Interview Guide`]
-            };
-          });
-
-          setSession(prev => {
-            let matches = prev.jobMatches;
-            let matchPct = 78;
-            if (matchResData) {
-              matchPct = matchResData.match_percentage;
-              const augmentedMatch = {
-                ...matchResData,
-                id: matchResData.id,
-                company: jobData?.company || 'Target Company',
-                role: jobData?.title || 'Software Engineer',
-                logo: '⚡',
-                matchPercent: matchResData.match_percentage,
-                missingSkills: missing,
-                matchedSkills: (prev.extractedSkills || []).filter(s => !missing.map(m => m.toLowerCase()).includes(s.toLowerCase()))
-              };
-              matches = [augmentedMatch];
-            }
-
-            return {
-              ...prev,
-              jobMatches: matches,
-              skillGaps: structuredGaps,
-              placementReadiness: Math.round((prev.atsScore + matchPct) / 2),
-              timeline: [...prev.timeline, { time: 'Just now', event: 'Skill Gaps & Industry Benchmark Computed' }]
-            };
-          });
-        });
-      }
-
-      // 4. Learning Roadmap
-      if (resumeId) {
-        await runJob('Learning Roadmap Generation', 2500, null, async () => {
-          const role = jobData?.title || 'Software Engineer';
-          const roadRes = await api.generateRoadmap(role, jobId || null);
-          
-          setSession(prev => ({
-            ...prev,
-            learningRoadmap: roadRes.data,
-            sessionStatus: 'Completed',
-            timeline: [...prev.timeline, { time: 'Just now', event: 'Personalized Roadmap Created' }]
-          }));
-        });
-      }
-      
-      addNotification(`Resume parsed! ATS score index reached ${resumeData?.ats_score}%.`);
-
-    } catch (err) {
-      console.error(err);
-      setSession(prev => prev ? { ...prev, sessionStatus: 'Failed' } : null);
-      showToast('AI analysis flow failed', 'error');
-    }
+      return {
+        ...prev,
+        dailyPlan: updatedPlan
+      };
+    });
   };
 
-  // Save Session to History
-  const saveSessionToHistory = () => {
-    if (!session) return;
-    const historyRecord = {
-      id: `hist-${Date.now()}`,
-      filename: session.uploadedResume.filename,
-      date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
-      atsScore: session.atsScore,
-      placementReadiness: session.placementReadiness,
-      jobMatchesCount: session.jobMatches.length,
-      topJobMatch: session.jobMatches[0] ? `${session.jobMatches[0].company || 'Target'} (${session.jobMatches[0].match_percentage}%)` : 'N/A',
-      skillGapsCount: session.skillGaps.length,
-      interviewScore: session.interviewResults ? session.interviewResults.overall_score : null
-    };
-
-    setHistory(prev => [historyRecord, ...prev]);
-    showToast('Placement analysis saved to history', 'success');
-    addNotification(`Analysis for ${session.uploadedResume.filename} has been saved to history.`);
+  const startNewAnalysis = async (file, jdText) => {
+    showToast('Analyzing resume file: ' + file.name + '...', 'info');
+    return new Promise(resolve => {
+      setTimeout(() => {
+        dispatchEvent(EVENTS.RESUME_ANALYZED, { fileName: file.name });
+        resolve({ status: 'success', score: placementProfile.scores.resume + 6 });
+      }, 1200);
+    });
   };
 
-  // Reset/Clear active session
-  const resetSession = async () => {
-    const sessId = localStorage.getItem('session_id');
-    if (sessId) {
-      try {
-        await api.deleteSession(sessId);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    
-    localStorage.removeItem('session_id');
-    localStorage.removeItem('placeai_session');
-    setSession(null);
-
-    try {
-      const res = await api.createSession();
-      localStorage.setItem('session_id', res.data.session_id);
-    } catch (err) {
-      console.error(err);
-    }
-
-    showToast('Current session cleared and reset', 'info');
-  };
-
-  // Delete specific history record
-  const deleteHistoryRecord = (id) => {
-    setHistory(prev => prev.filter(h => h.id !== id));
-    showToast('History record deleted', 'info');
+  const resetSession = () => {
+    localStorage.removeItem('placeai_placement_profile');
+    setPlacementProfile(initialPlacementProfile);
+    showToast('Placement session restored to default profile 🔄', 'info');
   };
 
   return (
     <SessionContext.Provider value={{
-      profile,
-      setProfile,
-      session,
-      setSession,
-      activeJobs,
-      notifications,
-      setNotifications,
-      history,
-      toasts,
-      showToast,
+      session: placementProfile,
+      placementProfile,
+      updateProfile: setPlacementProfile,
+      dispatchEvent,
+      completeTask,
       startNewAnalysis,
-      saveSessionToHistory,
       resetSession,
-      deleteHistoryRecord
+      showToast
     }}>
       {children}
-      
-      {/* Visual Toast Alerts Manager */}
-      <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', zIndex: 9999 }}>
+
+      {/* TOAST CONTAINER */}
+      <div style={{
+        position: 'fixed',
+        bottom: '24px',
+        right: '24px',
+        zIndex: 9999,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.75rem',
+        pointerEvents: 'none'
+      }}>
         {toasts.map(t => (
-          <div key={t.id} className={`toast toast-${t.type}`} style={{
-            background: t.type === 'success' ? '#10b981' : t.type === 'error' ? '#ef4444' : '#3b82f6',
-            color: '#ffffff',
-            padding: '0.75rem 1.5rem',
-            borderRadius: '6px',
-            fontSize: '0.85rem',
-            fontWeight: '600',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-            animation: 'fadeIn 0.2s ease-out'
-          }}>
-            {t.type === 'success' ? '✓ ' : t.type === 'error' ? '✗ ' : 'ℹ '}
-            {t.message}
+          <div
+            key={t.id}
+            style={{
+              background: t.type === 'info' ? 'linear-gradient(135deg, #1e293b, #0f172a)' : 'linear-gradient(135deg, #161925, #0f1117)',
+              border: `1px solid ${t.type === 'info' ? '#3b82f6' : '#10b981'}`,
+              color: '#ffffff',
+              padding: '0.9rem 1.4rem',
+              borderRadius: '16px',
+              fontSize: '0.9rem',
+              fontWeight: '800',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+              pointerEvents: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              animation: 'fadeInUp 0.3s ease'
+            }}
+          >
+            <span>{t.type === 'info' ? 'ℹ️' : '✅'}</span>
+            <span>{t.message}</span>
           </div>
         ))}
       </div>
@@ -486,3 +226,4 @@ export const SessionProvider = ({ children }) => {
   );
 };
 
+export const useSession = () => useContext(SessionContext);
