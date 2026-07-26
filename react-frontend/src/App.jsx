@@ -77,17 +77,6 @@ function AppLayout() {
           </div>
         </div>
 
-        {/* Readiness Badge Widget */}
-        <div style={{ margin: '0 1.25rem 1.5rem 1.25rem', background: '#0f1117', border: '1px solid #2d3342', borderRadius: '14px', padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <span style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '800' }}>READINESS SCORE</span>
-            <div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#10b981' }}>{scores.readiness !== undefined ? scores.readiness : 72}% Ready</div>
-          </div>
-          <button onClick={() => setShowOnboarding(true)} style={{ background: 'rgba(99, 102, 241, 0.2)', border: '1px solid rgba(99, 102, 241, 0.4)', color: '#818cf8', borderRadius: '8px', padding: '0.3rem 0.6rem', fontSize: '0.7rem', fontWeight: '800', cursor: 'pointer' }}>
-            Goal ⚙️
-          </button>
-        </div>
-
         {/* Grouped Sidebar Links */}
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', flex: 1, overflowY: 'auto', padding: '0 1.25rem 2rem 1.25rem' }}>
           {navGroups.map(grp => (
