@@ -1,0 +1,15 @@
+John Doe
+Software Engineer
+Email: john.doe@example.com
+
+Experience:
+- Software Engineer at Tech Corp (2020 - Present)
+- Developed scalable web applications using React and Node.js.
+- Deployed microservices on AWS using Docker and Kubernetes.
+- Optimized PostgreSQL queries to improve API response times by 30%.
+
+Education:
+- B.S. in Computer Science, University of Technology (2016-2020)
+
+Skills:
+JavaScript, Python, React, HTML, CSS, SQL, PostgreSQL, AWS, Docker, Git.
