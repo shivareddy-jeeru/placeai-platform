@@ -1,0 +1,34 @@
+# Task List — PlaceAI Refactoring
+
+- `[x]` Update database schemas & models
+  - `[x]` Update schemas in `schemas.py` to make `user_id` fields optional and include `session_id`
+- `[x]` Enhance agent logic
+  - `[x]` Implement `evaluate_answer` in `interview_agent.py` using Gemini API
+- `[x]` Update backend routers
+  - `[x]` Delete `auth.py` and `admin.py` routers
+  - `[x]` Update `resume.py` router (prefix `/resume`, `/analyze`, `/analysis`)
+  - `[x]` Update `job.py` router (prefix `/job`, `/analyze`)
+  - `[x]` Update `matching.py` router (prefix `/matching`, `/match`)
+  - `[x]` Implement `skills.py` router (endpoint `/gaps`)
+  - `[x]` Update `roadmap.py` router (prefix `/roadmap`, `/generate`, `/progress` as PATCH)
+  - `[x]` Update `interview.py` router (prefix `/interview`, endpoints `/start`, `/evaluate`, `/summary`)
+  - `[x]` Update `research.py` router (prefix `/research`, endpoint `/company`)
+  - `[x]` Update `chat.py` router (prefix `/chat`, endpoint `/query`)
+  - `[x]` Update `dashboard.py` router (prefix `/dashboard`, endpoint `/summary`)
+  - `[x]` Update `main.py` routing configuration
+- `[x]` Update React frontend client & context
+  - `[x]` Update `api.js` to manage session headers and map endpoints
+  - `[x]` Update `SessionContext.jsx` to integrate actual backend requests
+- `[x]` Update React frontend pages & components
+  - `[x]` Update `App.jsx` navigation and routing (pointing to new views)
+  - `[x]` Update `Dashboard.jsx` to show dynamic readiness/ATS values
+  - `[x]` Update `ResumeAnalyzer.jsx` to trigger real upload/parse
+  - `[x]` Update `JobMatcher.jsx` to trigger real match analysis
+  - `[x]` Update `SkillGapAnalysis.jsx` to display gaps from API
+  - `[x]` Update `RoadmapView.jsx` to render backend-generated stages and PATCH progress
+  - `[x]` Update `InterviewCoach.jsx` for mock QA start and evaluation
+  - `[x]` Create `CompanyResearch.jsx` page (grounded search RAG)
+  - `[x]` Create `PlacementAssistant.jsx` page (AI Mentor chat interface)
+- `[x]` Verification and Cleanup
+  - `[x]` Clean up backend tests (delete/modify auth/admin tests)
+  - `[x]` Run `pytest` to verify all backend logic works correctly

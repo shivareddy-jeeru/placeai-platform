@@ -1,0 +1,138 @@
+================================================================================
+           AI-POWERED PLACEMENT ASSISTANT - ARCHITECTURAL BLUEPRINT
+================================================================================
+
+This document details the architectural layout, codebase design, security patterns,
+and multi-agent execution pipeline of the AI-Powered Placement Assistant.
+
+--------------------------------------------------------------------------------
+1. CORE ARCHITECTURAL OVERVIEW
+--------------------------------------------------------------------------------
+The system is built as a decoupled Full-Stack Web Application consisting of:
+- Streamlit Frontend: A modern, reactive Python dashboard utilizing clean HSL/CSS
+  theming, interactive Plotly charts, session state-managed JWT auth, and a
+  dynamic modular sidebar layout.
+- FastAPI Backend: A high-performance, asynchronous REST API powered by Python,
+  Pydantic validations, SQLAlchemy ORM, and SlowAPI rate-limiting.
+- Multi-Agent Orchestration: A LangChain-driven workflow that parses user query
+  intent and delegates tasks to specialized sub-agents.
+- Vector Retrieval (RAG): A local vector database (ChromaDB) storing chunks of
+  historical student placement guides and company interview experiences, indexed
+  via Google Gemini's text embedding models.
+- Caching Layer: Redis in-memory storage, ensuring costly LLM API responses
+  and heavy operations are cached with a 1-hour TTL.
+- Persistent Relational Database: PostgreSQL (production) with SQLite fallback
+  (development) mapping User profile states, Resumes, and historical chat logs.
+
+--------------------------------------------------------------------------------
+2. DIRECTORY STRUCTURE & COMPONENT ROLES
+--------------------------------------------------------------------------------
+c:\Users\hp\project\
+├── backend/                        # BACKEND SERVICE CODES
+│   ├── app/
+│   │   ├── agents/                 # LangChain & Gemini-powered Agents
+│   │   │   ├── base.py             # Abstract Base Agent with HTTP/LangChain fallbacks
+│   │   │   ├── router.py           # Intent Classification routing agent
+│   │   │   ├── resume_agent.py     # ATS scoring & skill extractors
+│   │   │   ├── job_agent.py        # Job Description parsed requirement matcher
+│   │   │   ├── learning_agent.py   # Roadmap & course generator
+│   │   │   ├── interview_agent.py  # Mock interview coaching prompts
+│   │   │   └── research_agent.py   # Company RAG pipeline interface
+│   │   ├── routers/                # REST Controller routes
+│   │   │   ├── auth.py             # User signup, login, Google Social auth
+│   │   │   ├── resume.py           # Resume uploads & analytics endpoints
+│   │   │   └── chat.py             # Chat messaging pipeline & AI evaluation
+│   │   ├── services/
+│   │   │   ├── rag.py              # ChromaDB vector document ingestion/search
+│   │   │   └── evaluator.py        # LLM Judge (Hallucination/Relevance score)
+│   │   ├── cache.py                # Redis caching provider & fallback layer
+│   │   ├── config.py               # BaseSettings for prod/dev variables
+│   │   ├── database.py             # DB engines, sessions, and transaction setup
+│   │   ├── models.py               # Declarative SQLAlchemy schema models
+│   │   ├── schemas.py              # Pydantic payloads & output verification
+│   │   ├── rate_limiting.py        # SlowAPI configuration (DOS protection)
+│   │   ├── validation.py           # File size/type & password strength checkers
+│   │   └── main.py                 # FastAPI application root configuration
+│   ├── tests/                      # Pytest automation suite
+│   ├── conftest.py                 # SQLite isolated test fixtures
+│   └── Dockerfile                  # Container build config
+├── frontend/                       # STREAMLIT FRONTEND SERVICE
+│   ├── pages/                      # Dashboard tabs
+│   │   ├── 1_Dashboard.py          # Career stats & Plotly radar charts
+│   │   ├── 2_Resume_Analyzer.py    # Resume parsing & ATS scoring
+│   │   ├── 3_Job_Matcher.py        # Resume/Job Description compatibility
+│   │   ├── 4_Roadmap_Generator.py  # Custom courses/certifications paths
+│   │   ├── 5_Interview_Coach.py    # Simulated technical/HR mock interviews
+│   │   ├── 6_Company_Research.py   # Company context & hiring trends
+│   │   ├── 7_AI_Career_Chat.py     # Live multi-agent agent conversation
+│   │   └── 8_Admin_Console.py      # App stats & system settings
+│   ├── utils/                      # API clients & design helper modules
+│   ├── app.py                      # Main entrypoint, auth portal, home router
+│   └── Dockerfile                  # Container build config
+├── docker-compose.yml              # Multi-container local orchestration (Postgres/Redis/App)
+└── RUN_COMMANDS.md                 # Running & execution cheat sheet
+
+--------------------------------------------------------------------------------
+3. DETAILED EXECUTION PIPELINES
+--------------------------------------------------------------------------------
+
+A. Authentication & Security Flow:
+   1. The user logs in via credentials (tab 1) or simulated Google login (tab 3).
+   2. Frontend calls `/api/v1/token` on the Backend API.
+   3. Rate-limiter (SlowAPI) checks IP address requests (< 20/minute).
+   4. Password is validated via bcrypt hashing (`verify_password` inside `auth.py`).
+   5. JWT Access Token (signed using `SECRET_KEY`) is returned to the frontend.
+   6. Frontend stores the token in Streamlit `session_state` and appends it as an
+      `Authorization: Bearer <token>` header to all subsequent API calls.
+   7. For file uploads, the backend intercepts via `FileUploadValidator`, verifying
+      file size (<10MB) and content type (PDF/Word Doc) before saving.
+
+B. Multi-Agent Routing & RAG Chat Flow:
+   1. A user enters a prompt in the AI Career Chat window (e.g., "Google frontend interview experience").
+   2. The prompt is stored in the database's `ChatMessage` table under the current session.
+   3. The query is routed to the RouterAgent (`backend/app/agents/router.py`).
+   4. The RouterAgent parses the query using a low-temperature Gemini-1.5-Flash model
+      to classify intent into one of six routes: `resume`, `job`, `learning`,
+      `interview`, `research`, or `general`. If the API fails, it falls back to a
+      robust regex/keyword scanner.
+   5. If routed to `research`, the system executes a RAG check:
+      a. The `rag_service` queries the local persistent ChromaDB instance.
+      b. The top 3 matching chunks of historical placement experiences or interview logs
+         are retrieved using Google text embeddings.
+   6. The coordinator combines:
+      - The RAG retrieved context.
+      - The Candidate profile (extracted skills & education from their parsed resume).
+      - The last 6 messages of conversation history (extracted from DB).
+   7. The compiled system prompt is sent to `gemini-1.5-flash` to generate a
+      grounded, highly tailored response.
+
+C. Response Caching:
+   - Before executing a heavy agent loop (e.g., parsing a resume file), the system
+     hashes the parameters and checks Redis cache via `CacheService.get()`.
+   - If present, the cached response is instantly returned, saving API calls.
+   - If absent, it is calculated, written to Redis with a 1-hour TTL, and returned.
+   - If Redis crashes or is offline, the backend catches the exception and falls
+     back seamlessly to direct execution (zero downtime).
+
+D. AI Evaluation Framework:
+   - After compiling the response content, it passes to `evaluator_service`.
+   - An LLM judge runs an audit prompt to compute:
+     - Relevance Score (1.0 to 5.0): Assessment of how well the answer addresses the prompt.
+     - Hallucination Score (1.0 to 5.0): Grounding index tracking if the model
+       invented facts missing from RAG context.
+   - These scores are returned in the JSON payload, saved, and rendered on the
+     chat interface for quality assurance transparency.
+
+--------------------------------------------------------------------------------
+4. CODE QUALITY & AUTOMATED TESTING
+--------------------------------------------------------------------------------
+The project features an automated verification engine:
+- pytest is configured inside `pytest.ini` with root decorators.
+- `backend/conftest.py` provides clean isolation fixtures, overriding real database
+  engines with an in-memory SQLite setup (`sqlite:///:memory:`) for quick execution.
+- Over 35+ test cases in `backend/tests/` validate user registrations, JWT validations,
+  model cascade deletions, agent intent classification, and Mock UI payloads.
+- Coverage configurations allow developers to inspect test path effectiveness using
+  interactive `htmlcov` reports.
+- `verify_and_test.ps1` runs these verification steps sequentially to validate the workspace.
+================================================================================
