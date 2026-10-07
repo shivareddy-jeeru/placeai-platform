@@ -1,4 +1,11 @@
-# 🥇 AI-Powered Placement Assistant
+# 🥇 AI-Powered Placement Assistant (PlaceAI)
+
+[![Live Demo](https://img.shields.io/badge/Live_Site-placeai--platform.vercel.app-6366f1?style=for-the-badge&logo=vercel)](https://placeai-platform.vercel.app)
+[![Vercel Deployment](https://img.shields.io/badge/Deployment_Status-Active-success?style=for-the-badge&logo=vercel)](https://placeai-platform.vercel.app)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/shivareddy-jeeru/placeai-platform)
+
+> **Live Production URL:** [https://placeai-platform.vercel.app](https://placeai-platform.vercel.app)  
+> **Repository:** [https://github.com/shivareddy-jeeru/placeai-platform](https://github.com/shivareddy-jeeru/placeai-platform)
 
 The **AI-Powered Placement Assistant** is a production-ready, full-stack, multi-agent AI system designed to help students and job seekers prepare for coding placements, internships, and technical interviews.
 
