@@ -37,8 +37,8 @@ def test_resume_ats_score_calculation():
     assert "resumeAtsScore" in result
     assert result["resumeAtsScore"] > 70.0
     assert result["is_scanned_pdf"] is False
-    assert result["breakdown"]["contact"] == 10  # Email, Phone, Social
-    assert result["breakdown"]["sections"] >= 9  # Standard sections found (summary, skills, edu, exp, proj)
+    assert result["breakdown"]["contact"] == 5.0  # Email, Phone, Social (5% documented weight)
+    assert result["breakdown"]["sections"] >= 4.0  # Standard sections found (5% documented weight)
     assert result["metric_count"] >= 3           # 30%, 10,000, 40ms, 500
     assert "Python" in result["detected_skills"]
     assert "FastAPI" in result["detected_skills"]

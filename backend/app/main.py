@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.config import settings
 from backend.app.database import engine, Base
-from backend.app.routers import session, resume, job, matching, skills, roadmap, interview, research, chat, dashboard, code
+from backend.app.routers import auth, session, resume, job, matching, skills, roadmap, interview, research, chat, dashboard, code
 from backend.app.services.rag import rag_service
 from backend.app.rate_limiting import setup_rate_limiting
 
@@ -18,18 +18,19 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS configuration
-cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8501,http://localhost:5173").split(",")
+# CORS configuration - restricted to local development and production frontend
+default_origins = "http://localhost:3000,http://localhost:8501,http://localhost:5173,https://placeai-platform.vercel.app"
+cors_origins = os.getenv("CORS_ORIGINS", default_origins).split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[origin.strip() for origin in cors_origins],
+    allow_origins=[origin.strip() for origin in cors_origins if origin.strip()],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
 )
 
-# Payload size validation middleware (100KB limit to protect API credits)
-MAX_REQUEST_SIZE = 100 * 1024  # 100 KB limit
+# Payload size validation middleware (10MB limit to allow high-res PDF uploads safely)
+MAX_REQUEST_SIZE = 10 * 1024 * 1024  # 10 MB limit
 
 @app.middleware("http")
 async def limit_request_size(request, call_next):
@@ -39,14 +40,28 @@ async def limit_request_size(request, call_next):
             from fastapi.responses import JSONResponse
             return JSONResponse(
                 status_code=413,
-                content={"detail": "Payload too large. Maximum request size allowed is 100KB."}
+                content={"detail": "Payload too large. Maximum request size allowed is 10MB."}
             )
     return await call_next(request)
+
+# Global safe exception handler to prevent leaking stack traces or credentials in production
+@app.exception_handler(Exception)
+async def safe_exception_handler(request, exc):
+    from fastapi.responses import JSONResponse
+    from fastapi import HTTPException
+    if isinstance(exc, HTTPException):
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+    logger.error(f"Unhandled exception on {request.method} {request.url.path}: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "A secure internal server error occurred. Please try again shortly."}
+    )
 
 # Setup rate limiting
 setup_rate_limiting(app)
 
 # Include sub-routers
+app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(session.router, prefix=settings.API_V1_STR)
 app.include_router(resume.router, prefix=settings.API_V1_STR)
 app.include_router(job.router, prefix=settings.API_V1_STR)

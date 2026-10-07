@@ -49,7 +49,15 @@ export default function JobMatcher() {
   const navigate = useNavigate();
   const [selectedJobId, setSelectedJobId] = useState('amazon');
 
-  const atsResult = placementProfile?.atsResult || null;
+  const ds = placementProfile?.dashboardSummary;
+  const atsResult = placementProfile?.atsResult || (ds?.latest_ats_score ? {
+    resumeAtsScore: ds.latest_ats_score,
+    jobMatchScore: ds.latest_match_percentage,
+    fileName: 'Student_Verified_Resume.pdf',
+    detectedSkills: ds.matched_skills || ['Python', 'SQL', 'FastAPI'],
+    missingSkills: ds.missing_skills || ['Docker', 'AWS'],
+    breakdown: ds.ats_breakdown || {}
+  } : null);
 
   const getScoreColor = (score) => {
     if (score >= 85) return '#10b981';

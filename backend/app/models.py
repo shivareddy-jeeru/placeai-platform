@@ -34,13 +34,23 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
     full_name = Column(String(255), nullable=True)
+    target_role = Column(String(255), default="Software Engineer")
+    target_companies = Column(JSON, default=lambda: ["Amazon", "Google", "Microsoft", "TCS"])
+    preparation_level = Column(String(50), default="Intermediate")
     target_company_tier = Column(String(50), default="Tier 2") # "Tier 1", "Tier 2", "Tier 3"
+    current_streak = Column(Integer, default=1)
+    longest_streak = Column(Integer, default=1)
+    last_active_date = Column(DateTime, default=datetime.utcnow)
+    dsa_problems_solved = Column(Integer, default=0)
+    achievements = Column(JSON, default=list)
+    daily_plan = Column(JSON, default=list)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     resumes = relationship("Resume", back_populates="user", cascade="all, delete-orphan")
     jobs = relationship("JobDescription", back_populates="user", cascade="all, delete-orphan")
+    matches = relationship("ResumeMatch", back_populates="user", cascade="all, delete-orphan")
     roadmaps = relationship("LearningRoadmap", back_populates="user", cascade="all, delete-orphan")
     interviews = relationship("InterviewPrep", back_populates="user", cascade="all, delete-orphan")
     chats = relationship("ChatMessage", back_populates="user", cascade="all, delete-orphan")
@@ -50,7 +60,7 @@ class Resume(Base):
     __tablename__ = "resumes"
     
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     session_id = Column(String(36), index=True, nullable=True)
     filename = Column(String(255), nullable=False)
     extracted_skills = Column(JSON, nullable=True) # List of skills
@@ -73,7 +83,7 @@ class JobDescription(Base):
     __tablename__ = "job_descriptions"
     
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     session_id = Column(String(36), index=True, nullable=True)
     title = Column(String(255), nullable=True)
     company = Column(String(255), nullable=True)
@@ -89,8 +99,9 @@ class ResumeMatch(Base):
     __tablename__ = "resume_matches"
     
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    resume_id = Column(String(36), ForeignKey("resumes.id", ondelete="CASCADE"), nullable=False)
-    job_id = Column(String(36), ForeignKey("job_descriptions.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    resume_id = Column(String(36), ForeignKey("resumes.id", ondelete="CASCADE"), nullable=False, index=True)
+    job_id = Column(String(36), ForeignKey("job_descriptions.id", ondelete="CASCADE"), nullable=False, index=True)
     session_id = Column(String(36), index=True, nullable=True)
     match_percentage = Column(Float, default=0.0)
     skill_score = Column(Float, default=0.0)
@@ -101,6 +112,7 @@ class ResumeMatch(Base):
     recommendations = Column(JSON, nullable=True) # Actionable recommendations
     created_at = Column(DateTime, default=datetime.utcnow)
     
+    user = relationship("User", back_populates="matches")
     resume = relationship("Resume", back_populates="matches")
     job = relationship("JobDescription", back_populates="matches")
 
@@ -108,7 +120,7 @@ class LearningRoadmap(Base):
     __tablename__ = "learning_roadmaps"
     
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     session_id = Column(String(36), index=True, nullable=True)
     target_role = Column(String(255), nullable=False)
     roadmap_data = Column(JSON, nullable=False)
@@ -121,7 +133,7 @@ class InterviewPrep(Base):
     __tablename__ = "interview_preps"
     
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     session_id = Column(String(36), index=True, nullable=True)
     topic = Column(String(255), nullable=False)
     questions = Column(JSON, nullable=False) # List of Q&As with answers, difficulty levels, and types
@@ -141,7 +153,7 @@ class ChatMessage(Base):
     __tablename__ = "chat_messages"
     
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     session_id = Column(String(255), index=True, nullable=False)
     role = Column(String(50), nullable=False) # "user" or "assistant"
     content = Column(Text, nullable=False)
@@ -154,7 +166,7 @@ class ResumeVersion(Base):
     __tablename__ = "resume_versions"
     
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    resume_id = Column(String(36), ForeignKey("resumes.id", ondelete="CASCADE"), nullable=False)
+    resume_id = Column(String(36), ForeignKey("resumes.id", ondelete="CASCADE"), nullable=False, index=True)
     version_number = Column(Integer, nullable=False)
     filename = Column(String(255), nullable=False)
     extracted_skills = Column(JSON, nullable=True)
@@ -168,13 +180,14 @@ class InterviewHistory(Base):
     __tablename__ = "interview_histories"
     
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     session_id = Column(String(36), index=True, nullable=True)
     topic = Column(String(255), nullable=False)
     overall_score = Column(Float, default=0.0)
     grammar_score = Column(Float, default=0.0)
     technical_score = Column(Float, default=0.0)
     confidence_score = Column(Float, default=0.0)
+    rubric_scores = Column(JSON, nullable=True) # Rubric breakdown: technical_accuracy, problem_solving, etc.
     detailed_feedback = Column(JSON, nullable=True) # Dict of strengths, weaknesses, tips
     qna_records = Column(JSON, nullable=True) # List of QA dicts
     created_at = Column(DateTime, default=datetime.utcnow)

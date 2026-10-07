@@ -1,248 +1,285 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { calculateReadiness } from '../utils/readinessCalculator';
-import { calculateNextBestAction } from '../utils/nextBestAction';
-import { checkAchievements } from '../utils/achievementEngine';
-import { EVENTS } from '../utils/eventEmitter';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../utils/api';
+import { EVENTS } from '../utils/eventEmitter';
 
 const SessionContext = createContext();
 
-const baseProfile = {
-  identity: {
-    name: 'Shiva',
-    targetRole: 'Software Engineer',
-    targetCompanies: ['Amazon', 'TCS'],
-    preparationLevel: 'Intermediate'
-  },
-  scores: {
-    readiness: 72,
-    resume: null,
-    interview: 71,
-    jobMatch: null,
-    skills: 68
-  },
-  progress: {
-    dsaProblemsSolved: 47,
-    interviewsCompleted: 0,
-    resumesAnalyzed: 0,
-    tasksCompleted: 1
-  },
-  consistency: {
-    currentStreak: 6,
-    longestStreak: 6,
-    lastActiveDate: null
-  },
-  journey: {
-    resume: null,
-    skills: 68,
-    preparation: 54,
-    interviews: 42
-  },
-  onboarding: {
-    completed: true,
-    currentStep: 3
-  },
-  atsResult: null,
-  dailyPlan: [
-    { id: 'dsa-arrays', title: 'Solve 2 Medium Array & Tree Problems', category: 'DSA', duration: 25, completed: false },
-    { id: 'resume-impact', title: 'Improve Resume Impact Statements', category: 'Resume', duration: 10, completed: true },
-    { id: 'interview-prep', title: 'Practice 5 Behavioral Interview Questions', category: 'Interview', duration: 20, completed: false }
-  ]
-};
-
-export const initialPlacementProfile = {
-  ...baseProfile,
-  nextAction: calculateNextBestAction(baseProfile),
-  achievements: checkAchievements(baseProfile)
-};
-
-export const DEFAULT_DEMO_SESSION = initialPlacementProfile;
-
 export const SessionProvider = ({ children }) => {
-  const [placementProfile, setPlacementProfile] = useState(() => {
-    try {
-      const saved = localStorage.getItem('placeai_placement_profile');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const merged = {
-          ...initialPlacementProfile,
-          ...parsed,
-          scores: { ...initialPlacementProfile.scores, ...(parsed.scores || {}) },
-          progress: { ...initialPlacementProfile.progress, ...(parsed.progress || {}) },
-          journey: { ...initialPlacementProfile.journey, ...(parsed.journey || {}) },
-          atsResult: parsed.atsResult && Object.keys(parsed.atsResult).length > 0 ? parsed.atsResult : null
-        };
-        merged.nextAction = calculateNextBestAction(merged);
-        merged.achievements = checkAchievements(merged);
-        return merged;
-      }
-    } catch (e) {
-      console.error("Failed loading placement profile from localStorage", e);
-    }
-    return initialPlacementProfile;
-  });
-
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(() => localStorage.getItem('placeai_token') || null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [dashboardSummary, setDashboardSummary] = useState(null);
+  const [activeResume, setActiveResume] = useState(null);
   const [toasts, setToasts] = useState([]);
 
-  // Save to localStorage safely when placementProfile changes
-  useEffect(() => {
-    try {
-      localStorage.setItem('placeai_placement_profile', JSON.stringify(placementProfile));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [placementProfile]);
-
-  const showToast = (message, type = 'success') => {
-    const id = Date.now();
+  const showToast = useCallback((message, type = 'success') => {
+    const id = Date.now() + Math.random();
     setToasts(prev => [...prev, { id, message, type }]);
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
-    }, 4000);
-  };
+    }, 4500);
+  }, []);
 
-  const dispatchEvent = (eventType, payload = {}) => {
-    setPlacementProfile(prev => {
-      let updatedScores = { ...prev.scores };
-      let updatedProgress = { ...prev.progress };
-      let updatedJourney = { ...prev.journey };
-
-      if (eventType === EVENTS.RESUME_ANALYZED) {
-        if (payload.score) {
-          updatedScores.resume = payload.score;
-          updatedJourney.resume = payload.score;
-        }
-        updatedProgress.resumesAnalyzed = (updatedProgress.resumesAnalyzed || 0) + 1;
-        showToast('Resume ATS evaluation complete! Score: ' + updatedScores.resume + '/100 🎉');
-      } else if (eventType === EVENTS.TASK_COMPLETED) {
-        updatedProgress.tasksCompleted = (updatedProgress.tasksCompleted || 0) + 1;
-        if (payload.category === 'DSA') {
-          updatedProgress.dsaProblemsSolved = (updatedProgress.dsaProblemsSolved || 47) + 2;
-          showToast('2 DSA problems solved! Total solved: ' + updatedProgress.dsaProblemsSolved + ' 🧠');
-        } else {
-          showToast('Preparation task completed! +3% readiness 🎯');
-        }
-      } else if (eventType === EVENTS.INTERVIEW_COMPLETED) {
-        updatedScores.interview = Math.min(100, Math.max((updatedScores.interview || 71), payload.score || 78));
-        updatedProgress.interviewsCompleted = (updatedProgress.interviewsCompleted || 0) + 1;
-        updatedJourney.interviews = updatedScores.interview;
-        showToast('Mock Interview completed! Interview score: ' + updatedScores.interview + '% 🎤');
-      } else if (eventType === EVENTS.ONBOARDING_COMPLETED) {
-        showToast('Placement goal updated for ' + (payload.targetRole || 'Software Engineer') + ' 🚀');
-      }
-
-      const newReadiness = calculateReadiness(updatedScores, prev.consistency);
-      updatedScores.readiness = newReadiness;
-
-      const nextState = {
-        ...prev,
-        identity: { ...prev.identity, ...(payload.identity || {}) },
-        scores: updatedScores,
-        progress: updatedProgress,
-        journey: updatedJourney
-      };
-
-      nextState.nextAction = calculateNextBestAction(nextState);
-      nextState.achievements = checkAchievements(nextState);
-
-      return nextState;
-    });
-  };
-
-  const completeTask = (taskId) => {
-    setPlacementProfile(prev => {
-      const updatedPlan = prev.dailyPlan.map(t => {
-        if (t.id === taskId) {
-          return { ...t, completed: !t.completed };
-        }
-        return t;
-      });
-      const completedTask = updatedPlan.find(t => t.id === taskId);
-      if (completedTask && completedTask.completed) {
-        dispatchEvent(EVENTS.TASK_COMPLETED, { category: completedTask.category });
-      }
-      const nextState = {
-        ...prev,
-        dailyPlan: updatedPlan
-      };
-      nextState.nextAction = calculateNextBestAction(nextState);
-      nextState.achievements = checkAchievements(nextState);
-      return nextState;
-    });
-  };
-
-  const startNewAnalysis = async (file, jdText = '') => {
-    showToast('Evaluating resume with deterministic ATS engine...', 'info');
+  // Fetch Dashboard Summary from real database
+  const refreshDashboard = useCallback(async () => {
     try {
-      const res = await api.scoreResumeAts(file, jdText);
-      const atsData = {
-        ...res.data,
-        fileName: file?.name || 'Uploaded_Resume.pdf'
-      };
-
-      setPlacementProfile(prev => {
-        const updatedScores = {
-          ...prev.scores,
-          resume: atsData.resumeAtsScore,
-          jobMatch: atsData.jobMatchScore !== null && atsData.jobMatchScore !== undefined ? atsData.jobMatchScore : prev.scores.jobMatch
-        };
-        const updatedProgress = {
-          ...prev.progress,
-          resumesAnalyzed: (prev.progress.resumesAnalyzed || 0) + 1
-        };
-        const updatedJourney = {
-          ...prev.journey,
-          resume: atsData.resumeAtsScore
-        };
-        const newReadiness = calculateReadiness(updatedScores, prev.consistency);
-        updatedScores.readiness = newReadiness;
-
-        const nextState = {
-          ...prev,
-          atsResult: atsData,
-          scores: updatedScores,
-          progress: updatedProgress,
-          journey: updatedJourney
-        };
-        nextState.nextAction = calculateNextBestAction(nextState);
-        nextState.achievements = checkAchievements(nextState);
-        return nextState;
-      });
-
-      showToast(`Resume Evaluated! ATS Score: ${atsData.resumeAtsScore}/100 🎉`, 'success');
-      return atsData;
+      const res = await api.getDashboardSummary();
+      setDashboardSummary(res.data);
+      return res.data;
     } catch (err) {
-      console.error('Error analyzing resume with ATS engine:', err);
-      showToast('Failed to evaluate resume. Make sure backend API is running.', 'error');
+      console.error('Failed to fetch dashboard summary from backend:', err);
+      return null;
+    }
+  }, []);
+
+  // Initialize session on mount
+  useEffect(() => {
+    const initAuth = async () => {
+      setIsLoading(true);
+      const savedToken = localStorage.getItem('placeai_token');
+      if (savedToken) {
+        try {
+          const userRes = await api.getMe();
+          setUser(userRes.data);
+          await refreshDashboard();
+        } catch (err) {
+          console.warn('Saved token expired or invalid. Auto-provisioning demo student session...');
+          localStorage.removeItem('placeai_token');
+          // Auto-login as demo student so evaluator has zero friction
+          try {
+            const demoRes = await api.demoLogin();
+            localStorage.setItem('placeai_token', demoRes.data.access_token);
+            setToken(demoRes.data.access_token);
+            setUser(demoRes.data.user);
+            await refreshDashboard();
+          } catch (demoErr) {
+            console.error('Demo login fallback failed:', demoErr);
+          }
+        }
+      } else {
+        // First-time visit: auto-provision demo student session for instant review
+        try {
+          const demoRes = await api.demoLogin();
+          localStorage.setItem('placeai_token', demoRes.data.access_token);
+          setToken(demoRes.data.access_token);
+          setUser(demoRes.data.user);
+          await refreshDashboard();
+        } catch (err) {
+          console.error('Initial guest demo setup error:', err);
+        }
+      }
+      setIsLoading(false);
+    };
+
+    initAuth();
+  }, [refreshDashboard]);
+
+  // Auth: Login
+  const login = async (email, password) => {
+    try {
+      const res = await api.login({ email, password });
+      const { access_token, user: userData } = res.data;
+      localStorage.setItem('placeai_token', access_token);
+      setToken(access_token);
+      setUser(userData);
+      await refreshDashboard();
+      showToast(`Welcome back, ${userData.full_name || 'Student'}! 🚀`, 'success');
+      return userData;
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'Login failed. Please check credentials.';
+      showToast(msg, 'error');
       throw err;
     }
   };
 
-  const resetSession = () => {
-    localStorage.removeItem('placeai_placement_profile');
-    setPlacementProfile(initialPlacementProfile);
-    showToast('Placement session restored to default profile 🔄', 'info');
+  // Auth: Register
+  const register = async (formData) => {
+    try {
+      const res = await api.register(formData);
+      const { access_token, user: userData } = res.data;
+      localStorage.setItem('placeai_token', access_token);
+      setToken(access_token);
+      setUser(userData);
+      await refreshDashboard();
+      showToast(`Account created successfully for ${userData.full_name}! Welcome to PlaceAI 🌟`, 'success');
+      return userData;
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'Registration failed. Try a different email.';
+      showToast(msg, 'error');
+      throw err;
+    }
+  };
+
+  // Auth: Demo Login
+  const demoLogin = async () => {
+    try {
+      const res = await api.demoLogin();
+      const { access_token, user: userData } = res.data;
+      localStorage.setItem('placeai_token', access_token);
+      setToken(access_token);
+      setUser(userData);
+      await refreshDashboard();
+      showToast('Loaded Demo Student profile with isolated live database state! ⚡', 'info');
+      return userData;
+    } catch (err) {
+      showToast('Demo login unavailable. Ensure backend server is running.', 'error');
+      throw err;
+    }
+  };
+
+  // Auth: Logout
+  const logout = () => {
+    localStorage.removeItem('placeai_token');
+    setToken(null);
+    setUser(null);
+    setDashboardSummary(null);
+    setActiveResume(null);
+    showToast('Logged out of placement session.', 'info');
+  };
+
+  // Update Student Profile
+  const updateProfile = async (profileData) => {
+    try {
+      const res = await api.updateProfile(profileData);
+      setUser(res.data);
+      await refreshDashboard();
+      showToast('Placement target goals updated! 🎯', 'success');
+      return res.data;
+    } catch (err) {
+      showToast('Failed to update profile.', 'error');
+      throw err;
+    }
+  };
+
+  // Log DSA Problem Solved
+  const logDsaProblem = async (count = 1) => {
+    try {
+      const res = await api.logActivity('DSA', { count });
+      setUser(res.data);
+      await refreshDashboard();
+      showToast(`+${count} DSA Problem logged! Keep up your streak 🔥`, 'success');
+    } catch (err) {
+      console.error('Error logging DSA activity:', err);
+    }
+  };
+
+  // Resume Upload & ATS Scoring
+  const startNewAnalysis = async (file, jdText = '') => {
+    showToast('Running deterministic 9-factor ATS scoring...', 'info');
+    try {
+      const res = await api.scoreResumeAts(file, jdText);
+      const atsData = {
+        ...res.data,
+        fileName: file?.name || 'Resume.pdf'
+      };
+      setActiveResume(atsData);
+      await refreshDashboard();
+      showToast(`Resume Evaluated! ATS Score: ${atsData.resumeAtsScore}/100 📄`, 'success');
+      return atsData;
+    } catch (err) {
+      console.error('Error scoring resume:', err);
+      const msg = err.response?.data?.detail || 'Failed to process resume file.';
+      showToast(msg, 'error');
+      throw err;
+    }
+  };
+
+  // Interview Evaluation
+  const evaluateInterviewResponse = async (topic, qnaRecords) => {
+    try {
+      const res = await api.evaluateInterview(topic, qnaRecords);
+      await refreshDashboard();
+      showToast(`Mock Interview evaluated! Score: ${res.data.overall_score}/10 🎤`, 'success');
+      return res.data;
+    } catch (err) {
+      console.error('Interview evaluation error:', err);
+      showToast('Failed to evaluate interview response.', 'error');
+      throw err;
+    }
+  };
+
+  // Event Dispatcher for UI components
+  const dispatchEvent = async (eventType, payload = {}) => {
+    if (eventType === EVENTS.TASK_COMPLETED) {
+      if (payload.category === 'DSA') {
+        await logDsaProblem(1);
+      } else {
+        await refreshDashboard();
+        showToast('Preparation task recorded! 🎯', 'success');
+      }
+    } else if (eventType === EVENTS.INTERVIEW_COMPLETED) {
+      await refreshDashboard();
+    } else if (eventType === EVENTS.RESUME_ANALYZED) {
+      await refreshDashboard();
+    }
+  };
+
+  // Harmonized placement profile for legacy view components
+  const placementProfile = {
+    identity: {
+      name: user?.full_name || 'Candidate',
+      targetRole: user?.target_role || dashboardSummary?.priority_action_module || 'Software Engineer',
+      targetCompanies: user?.target_companies || ['Amazon', 'Google', 'Microsoft', 'TCS'],
+      preparationLevel: user?.preparation_level || 'Intermediate',
+      email: user?.email || ''
+    },
+    scores: {
+      readiness: dashboardSummary?.readiness_score || 0,
+      resume: dashboardSummary?.latest_ats_score || null,
+      interview: dashboardSummary?.readiness_breakdown?.interview_performance?.score || null,
+      jobMatch: dashboardSummary?.latest_match_percentage || null,
+      skills: dashboardSummary?.readiness_breakdown?.skills?.score || null
+    },
+    progress: {
+      dsaProblemsSolved: user?.dsa_problems_solved || 0,
+      interviewsCompleted: dashboardSummary?.readiness_breakdown?.interview_performance?.score ? 1 : 0,
+      resumesAnalyzed: dashboardSummary?.total_resumes || 0,
+      tasksCompleted: 1
+    },
+    consistency: {
+      currentStreak: user?.current_streak || 1,
+      longestStreak: user?.longest_streak || 1
+    },
+    journey: {
+      resume: dashboardSummary?.latest_ats_score || 0,
+      skills: dashboardSummary?.readiness_breakdown?.skills?.score || 0,
+      preparation: dashboardSummary?.readiness_score || 0,
+      interviews: dashboardSummary?.readiness_breakdown?.interview_performance?.score || 0
+    },
+    atsResult: activeResume,
+    dashboardSummary
   };
 
   return (
     <SessionContext.Provider value={{
-      session: placementProfile,
+      user,
+      token,
+      isAuthenticated: Boolean(user),
+      isLoading,
+      dashboardSummary,
+      activeResume,
       placementProfile,
-      updateProfile: setPlacementProfile,
-      dispatchEvent,
-      completeTask,
+      session: placementProfile,
+      login,
+      register,
+      demoLogin,
+      logout,
+      updateProfile,
+      logDsaProblem,
+      refreshDashboard,
       startNewAnalysis,
-      resetSession,
+      evaluateInterviewResponse,
+      dispatchEvent,
       showToast
     }}>
       {children}
 
-      {/* TOAST CONTAINER */}
+      {/* Floating Notifications */}
       <div style={{
         position: 'fixed',
         bottom: '24px',
         right: '24px',
-        zIndex: 9999,
+        zIndex: 99999,
         display: 'flex',
         flexDirection: 'column',
         gap: '0.75rem',
@@ -252,21 +289,27 @@ export const SessionProvider = ({ children }) => {
           <div
             key={t.id}
             style={{
-              background: t.type === 'info' ? 'linear-gradient(135deg, #1e293b, #0f172a)' : 'linear-gradient(135deg, #161925, #0f1117)',
-              border: `1px solid ${t.type === 'info' ? '#3b82f6' : '#10b981'}`,
+              background: t.type === 'error'
+                ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.95), rgba(153, 27, 27, 0.95))'
+                : t.type === 'info'
+                ? 'linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95))'
+                : 'linear-gradient(135deg, rgba(16, 25, 40, 0.95), rgba(15, 17, 23, 0.95))',
+              border: `1px solid ${t.type === 'error' ? '#ef4444' : t.type === 'info' ? '#3b82f6' : '#10b981'}`,
               color: '#ffffff',
               padding: '0.9rem 1.4rem',
               borderRadius: '16px',
-              fontSize: '0.9rem',
-              fontWeight: '800',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+              fontSize: '0.88rem',
+              fontWeight: '700',
+              boxShadow: '0 12px 36px rgba(0,0,0,0.6)',
               pointerEvents: 'auto',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.75rem'
+              gap: '0.75rem',
+              backdropFilter: 'blur(16px)',
+              animation: 'fadeInUp 0.3s ease'
             }}
           >
-            <span>{t.type === 'info' ? 'ℹ️' : '✅'}</span>
+            <span>{t.type === 'error' ? '⚠️' : t.type === 'info' ? 'ℹ️' : '✅'}</span>
             <span>{t.message}</span>
           </div>
         ))}

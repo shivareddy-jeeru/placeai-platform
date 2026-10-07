@@ -8,6 +8,10 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('placeai_token');
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
   const sessionId = localStorage.getItem('session_id');
   if (sessionId) {
     config.headers['X-Session-ID'] = sessionId;
@@ -16,12 +20,20 @@ api.interceptors.request.use((config) => {
 });
 
 export default {
+  // Authentication & Student Profile
+  register: (userData) => api.post('/auth/register', userData),
+  login: (credentials) => api.post('/auth/login', credentials),
+  demoLogin: () => api.post('/auth/demo-login'),
+  getMe: () => api.get('/auth/me'),
+  updateProfile: (profileData) => api.put('/auth/profile', profileData),
+  logActivity: (category, details = {}) => api.post('/auth/activity', { category, details }),
+
   // Session management
   createSession: () => api.post('/session/create'),
   deleteSession: (id) => api.delete(`/session/${id}`),
   getSessionDetails: (id) => api.get(`/session/${id}`),
 
-  // Dashboard
+  // Real Dashboard Summary & Readiness Engine
   getDashboardSummary: () => api.get('/dashboard/summary'),
 
   // Resumes
@@ -64,6 +76,7 @@ export default {
     current_skills,
     missing_skills
   }),
+  getRoadmaps: () => api.get('/roadmap'),
   updateRoadmapProgress: (completed_tasks) => api.patch('/roadmap/progress', { completed_tasks }),
 
   // Mock Interview Coach
@@ -92,4 +105,3 @@ export default {
   generateTests: (code) => api.post('/code/generate-tests', { code }),
   runTests: (code, test_code = null) => api.post('/code/run-tests', { code, test_code }),
 };
-

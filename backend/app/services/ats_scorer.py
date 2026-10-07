@@ -2,6 +2,9 @@
 Deterministic ATS Compatibility Scoring Engine and Job Description Match Engine
 Calculates transparent, reproducible, dynamic resume metrics, section scores,
 skill overlap, action verb counts, metrics detection, and JD compatibility.
+Implements the exact documented 9-factor model:
+  Contact 5%, Education 10%, Skills 20%, Projects 15%, Experience/Internship 15%,
+  Certifications 10%, Keywords 15%, Formatting 5%, Section Completeness 5%. Total = 100%.
 """
 import re
 import logging
@@ -17,7 +20,7 @@ SKILLS_TAXONOMY = [
     'Redis', 'GraphQL', 'REST API', 'Docker', 'Kubernetes', 'AWS', 'Azure', 'GCP', 'Git',
     'GitHub', 'CI/CD', 'Linux', 'Machine Learning', 'Deep Learning', 'NLP', 'Generative AI',
     'LLM', 'LangChain', 'TensorFlow', 'PyTorch', 'System Design', 'Data Structures', 'Algorithms',
-    'Pandas', 'NumPy', 'Scikit-Learn', 'Tailwind', 'Bootstrap', 'Webpack', 'Vite', 'GraphQL',
+    'Pandas', 'NumPy', 'Scikit-Learn', 'Tailwind', 'Bootstrap', 'Webpack', 'Vite',
     'Microservices', 'Jest', 'Pytest', 'Selenium', 'Kafka', 'RabbitMQ', 'Terraform', 'Ansible'
 ]
 
@@ -25,9 +28,9 @@ SECTION_KEYWORDS = {
     'summary': ['summary', 'objective', 'profile', 'about me', 'executive summary'],
     'skills': ['skills', 'technical skills', 'technologies', 'core competencies', 'stack', 'tools'],
     'education': ['education', 'academic', 'university', 'college', 'qualification', 'degree'],
-    'experience': ['experience', 'work history', 'employment', 'work experience', 'professional background', 'career history'],
+    'experience': ['experience', 'work history', 'employment', 'work experience', 'professional background', 'career history', 'internship'],
     'projects': ['projects', 'personal projects', 'academic projects', 'portfolio', 'key projects'],
-    'certifications': ['certifications', 'licenses', 'credentials', 'certifications & courses'],
+    'certifications': ['certifications', 'licenses', 'credentials', 'certifications & courses', 'certificate'],
     'achievements': ['achievements', 'awards', 'honors', 'accomplishments', 'recognition'],
     'languages': ['languages', 'spoken languages', 'linguistic skills']
 }
@@ -73,151 +76,223 @@ class ATSScorer:
 
     def calculate_resume_ats_score(self, resume_text: str) -> Dict[str, Any]:
         """
-        Calculates a dynamic, multi-tiered deterministic 100-point Resume ATS Score.
-        Evaluates length, section coverage, contact links, skill density, action verbs,
-        quantified impact metrics, education, and formatting integrity.
+        Calculates a transparent, reproducible deterministic 100-point Resume ATS Score.
+        Documented weights:
+          1. Contact Details: 5% (5 pts)
+          2. Education: 10% (10 pts)
+          3. Technical Skills: 20% (20 pts)
+          4. Projects: 15% (15 pts)
+          5. Experience / Internship: 15% (15 pts)
+          6. Certifications & Achievements: 10% (10 pts)
+          7. Keywords, Action Verbs & Metrics: 15% (15 pts)
+          8. Formatting & Layout: 5% (5 pts)
+          9. Section Completeness: 5% (5 pts)
+        Total: 100 pts.
         """
         clean_text = resume_text.strip()
         norm_text = self.normalize(clean_text)
         word_count = len(clean_text.split())
         warnings = []
+        strengths = []
 
-        # 1. ATS Readability & Content Depth (Max 15 pts)
+        # Check for scanned or image-based PDF
         is_scanned_pdf = len(clean_text) < 80
         if is_scanned_pdf:
-            readability_score = 0
-            warnings.append("This PDF appears to be scanned or image-based. Text content could not be extracted cleanly.")
-        elif word_count >= 350:
-            readability_score = 15
-        elif word_count >= 200:
-            readability_score = 11
-        elif word_count >= 100:
-            readability_score = 7
-        else:
-            readability_score = 4
-            warnings.append("Resume content is very brief (under 100 words). Add detail to your experience & projects.")
+            warnings.append("This document appears to be scanned or image-based with little selectable text.")
+            return {
+                "resumeAtsScore": 0.0,
+                "is_scanned_pdf": True,
+                "breakdown": {
+                    "contact": 0.0,
+                    "education": 0.0,
+                    "skills": 0.0,
+                    "projects": 0.0,
+                    "experience": 0.0,
+                    "certifications": 0.0,
+                    "keywords": 0.0,
+                    "formatting": 0.0,
+                    "sections": 0.0,
+                    "readability": 0.0,
+                    "achievements": 0.0
+                },
+                "detected_skills": [],
+                "detected_sections": [],
+                "metric_count": 0,
+                "warnings": warnings,
+                "strengths": []
+            }
 
-        # 2. Standard Sections Detection (Max 15 pts)
-        found_sections = []
-        for section, kw_list in SECTION_KEYWORDS.items():
-            if any(kw in norm_text for kw in kw_list):
-                found_sections.append(section)
-
-        # 8 possible sections
-        sections_ratio = len(found_sections) / len(SECTION_KEYWORDS)
-        sections_score = round(sections_ratio * 15)
-
-        missing_core_sections = [s for s in ['skills', 'experience', 'education', 'projects'] if s not in found_sections]
-        if missing_core_sections:
-            warnings.append(f"Missing core section headings: {', '.join(missing_core_sections)}.")
-
-        # 3. Contact Information (Max 10 pts)
-        contact_score = 0
+        # 1. Contact Information (Max 5 pts)
         has_email = bool(re.search(r'[\w.-]+@[\w.-]+\.\w+', clean_text))
         has_phone = bool(re.search(r'\+?\d[\d\s()\-]{8,15}\d', clean_text))
         has_linkedin = 'linkedin' in norm_text
         has_github_portfolio = any(k in norm_text for k in ['github', 'portfolio', 'http', 'gitlab'])
 
+        contact_score = 0.0
         if has_email:
-            contact_score += 3
+            contact_score += 2.0
         else:
             warnings.append("Missing contact email address.")
 
         if has_phone:
-            contact_score += 3
+            contact_score += 1.5
         else:
             warnings.append("Missing contact phone number.")
 
-        if has_linkedin:
-            contact_score += 2
+        if has_linkedin or has_github_portfolio:
+            contact_score += 1.5
+            strengths.append("Contains professional online profiles (LinkedIn/GitHub).")
         else:
-            warnings.append("Missing LinkedIn profile link.")
+            warnings.append("Missing LinkedIn or GitHub/portfolio links.")
 
-        if has_github_portfolio:
-            contact_score += 2
-        else:
-            warnings.append("Missing GitHub or personal portfolio link.")
+        # 2. Education (Max 10 pts)
+        has_degree = any(e in norm_text for e in ['bachelor', 'master', 'btech', 'mtech', 'b.tech', 'm.tech', 'b.s', 'm.s', 'phd', 'degree', 'diploma'])
+        has_institution = any(i in norm_text for i in ['university', 'college', 'institute', 'school', 'academy', 'stanford', 'berkeley', 'state'])
+        has_grad_year = bool(re.search(r'\b(20\d{2}|19\d{2})\b', clean_text))
 
-        # 4. Technical Skill Density & Quality (Max 15 pts)
+        education_score = 0.0
+        if has_degree:
+            education_score += 5.0
+        if has_institution:
+            education_score += 3.0
+        if has_grad_year:
+            education_score += 2.0
+
+        if education_score >= 8.0:
+            strengths.append("Clear educational background with degree and institution.")
+        elif education_score == 0.0:
+            warnings.append("No recognized university degree or academic qualification found.")
+
+        # 3. Technical Skills (Max 20 pts)
         detected_skills = self.detect_skills(clean_text)
         skill_cnt = len(detected_skills)
-        if skill_cnt >= 15:
-            skills_score = 15
-        elif skill_cnt >= 10:
-            skills_score = 13
-        elif skill_cnt >= 7:
-            skills_score = 10
-        elif skill_cnt >= 4:
-            skills_score = 7
-        elif skill_cnt >= 1:
-            skills_score = 4
-        else:
-            skills_score = 1
-            warnings.append("No technical skills detected from taxonomy. Add a dedicated Skills section.")
+        # Scaled: 10 skills = 20 pts
+        skills_score = min(20.0, (skill_cnt / 10.0) * 20.0)
+        if skill_cnt >= 7:
+            strengths.append(f"Strong technical skill footprint ({skill_cnt} skills detected).")
+        elif skill_cnt < 3:
+            warnings.append("Few technical skills recognized from standard taxonomy. Add a dedicated Skills section.")
 
-        # 5. Experience & Action Verbs (Max 15 pts)
+        # 4. Projects (Max 15 pts)
+        has_project_heading = any(kw in norm_text for kw in SECTION_KEYWORDS['projects'])
+        project_tech_mentions = sum(1 for s in detected_skills if s.lower() in norm_text)
+        projects_score = 0.0
+        if has_project_heading:
+            projects_score += 7.5
+        if project_tech_mentions >= 3:
+            projects_score += 7.5
+        elif project_tech_mentions > 0:
+            projects_score += (project_tech_mentions / 3.0) * 7.5
+
+        if projects_score >= 12.0:
+            strengths.append("Demonstrated project portfolio with technical implementation details.")
+        elif not has_project_heading:
+            warnings.append("Missing dedicated Projects section.")
+
+        # 5. Experience / Internship (Max 15 pts)
+        has_exp_heading = any(kw in norm_text for kw in SECTION_KEYWORDS['experience'])
+        has_exp_keywords = any(k in norm_text for k in ['intern', 'engineer', 'developer', 'analyst', 'associate', 'lead', 'manager', 'consultant', 'company'])
+        exp_score = 0.0
+        if has_exp_heading:
+            exp_score += 7.5
+        if has_exp_keywords:
+            exp_score += 7.5
+
+        if exp_score >= 12.0:
+            strengths.append("Documented work or internship experience.")
+        elif not has_exp_heading:
+            warnings.append("Missing dedicated Experience or Internship section.")
+
+        # 6. Certifications & Achievements (Max 10 pts)
+        has_cert = any(kw in norm_text for kw in SECTION_KEYWORDS['certifications'])
+        has_achieve = any(kw in norm_text for kw in SECTION_KEYWORDS['achievements'])
+        cert_score = 0.0
+        if has_cert:
+            cert_score += 5.0
+        if has_achieve:
+            cert_score += 5.0
+        if not has_cert and not has_achieve:
+            # Check for general keywords
+            if any(k in norm_text for k in ['certified', 'aws certified', 'coursera', 'hackathon', 'ranked', 'winner']):
+                cert_score += 5.0
+
+        # 7. Keywords, Action Verbs & Metrics (Max 15 pts)
         action_verbs_found = self.detect_action_verbs(clean_text)
         verb_cnt = len(action_verbs_found)
-        if verb_cnt >= 8:
-            exp_score = 15
-        elif verb_cnt >= 5:
-            exp_score = 12
-        elif verb_cnt >= 3:
-            exp_score = 9
-        elif verb_cnt >= 1:
-            exp_score = 6
-        else:
-            exp_score = 3
-            warnings.append("Few impact action verbs found (e.g. 'developed', 'architected', 'optimized'). Use action-oriented bullet points.")
+        verb_score = min(8.0, (verb_cnt / 6.0) * 8.0)
 
-        # 6. Quantified Impact Metrics (Max 10 pts)
-        # Matches numbers followed by %, x, ms, sec, users, records, requests, etc.
         metric_matches = re.findall(
             r'\b\d+(\.\d+)?\s?(%|x|users|records|ms|sec|seconds|projects|requests|days|months|years|k|m|b|\+)\b',
             clean_text, re.IGNORECASE
         )
         metric_count = len(metric_matches)
-        if metric_count >= 5:
-            achievements_score = 10
-        elif metric_count >= 3:
-            achievements_score = 7
-        elif metric_count >= 1:
-            achievements_score = 4
+        metric_score = min(7.0, (metric_count / 3.0) * 7.0)
+
+        keywords_score = verb_score + metric_score
+        if metric_count >= 2:
+            strengths.append(f"Quantifiable metrics detected ({metric_count} metrics) demonstrating measurable business impact.")
         else:
-            achievements_score = 0
-            warnings.append("No measurable metrics found in bullet points (e.g., 'improved speed by 35%'). Add quantified results.")
+            warnings.append("Few quantifiable metrics found. Include concrete numbers (%, ms, latency, user counts).")
 
-        # 7. Education & Degree Qualification (Max 5 pts)
-        has_edu = any(e in norm_text for e in ['bachelor', 'master', 'btech', 'mtech', 'b.tech', 'm.tech', 'b.s', 'm.s', 'phd', 'university', 'college', 'institute', 'degree'])
-        education_score = 5 if has_edu else 0
-        if not has_edu:
-            warnings.append("No degree or university qualification detected.")
+        if verb_cnt >= 4:
+            strengths.append(f"Strong action verb density ({verb_cnt} action verbs).")
+        else:
+            warnings.append("Few impactful action verbs found (e.g., 'developed', 'architected', 'optimized').")
 
-        # 8. Formatting & Warnings Penalty (Max 15 pts base)
-        formatting_base = 15
-        deductions = len(warnings) * 2
-        formatting_score = max(2, formatting_base - deductions)
+        # 8. Formatting & Layout Integrity (Max 5 pts)
+        formatting_score = 5.0
+        if word_count < 150:
+            formatting_score -= 3.0
+            warnings.append("Resume is unusually short (under 150 words). Provide more comprehensive details.")
+        elif word_count > 1500:
+            formatting_score -= 1.5
+            warnings.append("Resume is lengthy (over 1500 words). Recommended length for college/junior roles is 1-2 pages.")
 
-        # Total ATS Score calculation
-        total_ats_score = min(100.0, readability_score + sections_score + contact_score + skills_score + exp_score + achievements_score + education_score + formatting_score)
+        # 9. Section Completeness (Max 5 pts)
+        found_sections = []
+        for section, kw_list in SECTION_KEYWORDS.items():
+            if any(kw in norm_text for kw in kw_list):
+                found_sections.append(section)
+
+        core_sections = ['skills', 'education', 'experience', 'projects']
+        core_present = sum(1 for s in core_sections if s in found_sections)
+        sections_score = (core_present / 4.0) * 5.0
+
+        # Calculate Total Deterministic ATS Score
+        total_ats_score = (
+            contact_score +
+            education_score +
+            skills_score +
+            projects_score +
+            exp_score +
+            cert_score +
+            keywords_score +
+            formatting_score +
+            sections_score
+        )
+        total_ats_score = min(100.0, max(0.0, total_ats_score))
 
         return {
             "resumeAtsScore": round(total_ats_score, 1),
-            "is_scanned_pdf": is_scanned_pdf,
+            "is_scanned_pdf": False,
             "breakdown": {
-                "readability": readability_score,
-                "sections": sections_score,
-                "contact": contact_score,
-                "skills": skills_score,
-                "experience": exp_score,
-                "achievements": achievements_score,
-                "education": education_score,
-                "formatting": formatting_score
+                "contact": round(contact_score, 1),
+                "education": round(education_score, 1),
+                "skills": round(skills_score, 1),
+                "projects": round(projects_score, 1),
+                "experience": round(exp_score, 1),
+                "certifications": round(cert_score, 1),
+                "keywords": round(keywords_score, 1),
+                "formatting": round(formatting_score, 1),
+                "sections": round(sections_score, 1),
+                "readability": round(formatting_score * 3.0, 1), # Compatibility alias
+                "achievements": round(metric_score * (10.0 / 7.0), 1) # Compatibility alias
             },
             "detected_skills": detected_skills,
             "detected_sections": found_sections,
             "metric_count": metric_count,
-            "warnings": warnings
+            "warnings": warnings,
+            "strengths": strengths
         }
 
     def calculate_job_match_score(self, resume_text: str, job_description_text: str) -> Dict[str, Any]:
@@ -225,6 +300,11 @@ class ATSScorer:
         Calculates a deterministic 100-point Job Description Match Score.
         Evaluates required skill overlap, technical keywords, title relevance,
         experience alignment, and produces missing vs matched skills.
+        Weights:
+          - Required Skill Coverage: 40 pts
+          - Technical Keyword Alignment: 25 pts
+          - Role & Title Alignment: 20 pts
+          - Experience / Requirement Depth: 15 pts
         """
         if not job_description_text or not job_description_text.strip():
             return {
@@ -241,69 +321,57 @@ class ATSScorer:
         matched_skills = sorted(list(resume_skills.intersection(job_skills)))
         missing_skills = sorted(list(job_skills - resume_skills))
 
-        # 1. Required Skill Coverage (35 pts)
+        # 1. Required Skill Coverage (Max 40 pts)
         if job_skills:
-            req_skill_score = round((len(matched_skills) / len(job_skills)) * 35, 1)
+            req_skill_score = (len(matched_skills) / len(job_skills)) * 40.0
         else:
-            req_skill_score = 22.0
+            req_skill_score = 30.0
 
-        # 2. Technical Keyword Match (25 pts)
+        # 2. Technical Keyword Alignment (Max 25 pts)
         norm_resume = self.normalize(resume_text)
-        norm_job = self.normalize(job_description_text)
+        norm_jd = self.normalize(job_description_text)
         
-        job_keywords = set(w for w in norm_job.split() if len(w) >= 4 and w not in ['with', 'that', 'from', 'this', 'have', 'your', 'will', 'about', 'must'])
-        matched_kw = [kw for kw in job_keywords if kw in norm_resume]
-        
-        if job_keywords:
-            keyword_score = round(min(25.0, (len(matched_kw) / len(job_keywords)) * 30.0), 1)
+        # Check presence of additional keywords
+        extra_keywords = ['api', 'database', 'system design', 'testing', 'cloud', 'architecture', 'scalability', 'ci/cd', 'frontend', 'backend']
+        jd_extra = [kw for kw in extra_keywords if kw in norm_jd]
+        resume_extra = [kw for kw in jd_extra if kw in norm_resume]
+        if jd_extra:
+            keyword_score = (len(resume_extra) / len(jd_extra)) * 25.0
         else:
-            keyword_score = 15.0
+            keyword_score = 20.0
 
-        # 3. Role / Title Relevance (15 pts)
-        titles = ['software engineer', 'backend developer', 'frontend developer', 'fullstack developer', 'data engineer', 'devops engineer', 'analyst']
-        job_title = "Software Engineer"
-        for t in titles:
-            if t in norm_job:
-                job_title = t
-                break
-        
-        title_score = 15.0 if job_title in norm_resume else 8.0
+        # 3. Role & Title Relevance (Max 20 pts)
+        title_matches = 0
+        common_roles = ['software engineer', 'backend', 'frontend', 'full stack', 'developer', 'sde', 'data engineer', 'devops']
+        for role in common_roles:
+            if role in norm_jd and role in norm_resume:
+                title_matches += 1
+        role_score = 20.0 if title_matches > 0 else 12.0
 
-        # 4. Experience Relevance (10 pts)
-        exp_score = 10.0 if any(k in norm_resume for k in ['experience', 'project', 'developed', 'built', 'implemented']) else 4.0
+        # 4. Experience & Requirement Alignment (Max 15 pts)
+        exp_score = 15.0 if any(k in norm_resume for k in ['intern', 'engineer', 'developer', 'experience']) else 8.0
 
-        # 5. Education Alignment (5 pts)
-        edu_score = 5.0 if any(k in norm_resume for k in ['degree', 'bachelor', 'master', 'btech', 'mtech', 'computer science']) else 2.0
-
-        # 6. Preferred Skill Coverage & Context (10 pts total)
-        pref_score = 5.0 if len(matched_skills) >= 2 else 2.0
-        context_score = 5.0 if len(matched_kw) >= 5 else 2.0
-
-        total_match_score = min(100.0, req_skill_score + keyword_score + title_score + exp_score + edu_score + pref_score + context_score)
+        total_match_score = min(100.0, max(0.0, req_skill_score + keyword_score + role_score + exp_score))
 
         recommendations = []
         if missing_skills:
-            recommendations.append(f"Add missing key technologies to your resume: {', '.join(missing_skills[:4])}.")
-        if title_score < 15.0:
-            recommendations.append(f"Align your profile title and summary to match the target role: '{job_title.title()}'.")
-        if keyword_score < 20.0:
-            recommendations.append("Incorporate specific tools, frameworks, and buzzwords from the job description into your experience bullet points.")
+            top_missing = missing_skills[:3]
+            recommendations.append(f"Add key technical competencies missing from job description: {', '.join(top_missing)}.")
+        if req_skill_score < 25.0:
+            recommendations.append("Tailor your projects to demonstrate direct hands-on use of the primary tech stack.")
+        if not recommendations:
+            recommendations.append("Strong job description alignment! Prepare STAR scenario responses for interview rounds.")
 
         return {
             "jobMatchScore": round(total_match_score, 1),
             "breakdown": {
-                "required_skills": req_skill_score,
-                "technical_keywords": keyword_score,
-                "title_relevance": title_score,
-                "experience_relevance": exp_score,
-                "education_alignment": edu_score,
-                "preferred_skills": pref_score,
-                "context_relevance": context_score
+                "required_skills": round(req_skill_score, 1),
+                "technical_keywords": round(keyword_score, 1),
+                "role_relevance": round(role_score, 1),
+                "experience_relevance": round(exp_score, 1)
             },
             "matchedSkills": matched_skills,
             "missingSkills": missing_skills,
-            "matchedKeywords": matched_kw[:10],
-            "missingKeywords": [kw for kw in list(job_keywords) if kw not in matched_kw][:10],
             "recommendations": recommendations
         }
 

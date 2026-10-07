@@ -1,76 +1,59 @@
 import React, { useState, useRef } from 'react';
-import { useSession, DEFAULT_DEMO_SESSION } from '../context/SessionContext';
+import { useSession } from '../context/SessionContext';
 import { useNavigate } from 'react-router-dom';
-import AnalysisView from './AnalysisView';
+import ProgressRing from '../components/ProgressRing';
 
-/* ─── Mini Sparkline SVG ────────────────────────────────────── */
-const Sparkline = ({ color = '#6366f1', up = true }) => {
-  const pts = up
-    ? '0,20 10,12 20,15 30,8 40,11 50,4 60,6 70,2'
-    : '0,5 10,12 20,8 30,15 40,11 50,18 60,14 70,20';
-  return (
-    <svg width="70" height="22" viewBox="0 0 70 22" style={{ display: 'block' }}>
-      <polyline points={pts} stroke={color} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-};
+export default function Dashboard({ onOpenAuth }) {
+  const {
+    user,
+    dashboardSummary,
+    startNewAnalysis,
+    logDsaProblem,
+    refreshDashboard
+  } = useSession();
 
-export default function Dashboard() {
-  const { profile, session, activeJobs, startNewAnalysis, resetSession } = useSession();
-
-  const handleResetSession = () => {
-    if (window.confirm("Are you sure you want to reset your placement session metrics back to default profile?")) {
-      resetSession();
-    }
-  };
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
-  const [showAnalysisHub, setShowAnalysisHub] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [showFormulaModal, setShowFormulaModal] = useState(false);
 
-  const activeData = session || DEFAULT_DEMO_SESSION;
+  const studentName = user?.full_name || 'Student';
+  const targetRole = user?.target_role || 'Software Engineer';
+  const streak = user?.current_streak || dashboardSummary?.streak_count || 1;
+  const dsaSolved = user?.dsa_problems_solved ?? dashboardSummary?.dsa_problems_solved ?? 0;
 
-  const runningJob = Object.values(session?.activeJobs || {})[0];
-  if (runningJob) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', flexDirection: 'column', gap: '1.25rem', background: '#0f1117', width: '100%', padding: '2rem', color: '#ffffff' }}>
-        <div className="spinner" style={{ borderTopColor: '#6366f1', width: '3.5rem', height: '3.5rem' }} />
-        <h3 style={{ color: '#ffffff', fontWeight: 800, fontSize: '1.4rem' }}>AI is analyzing your resume…</h3>
-        <div style={{ width: '360px', height: '8px', background: '#1e2438', borderRadius: '4px', overflow: 'hidden' }}>
-          <div style={{ width: `${runningJob.progress}%`, height: '100%', background: 'linear-gradient(90deg,#6366f1,#8b5cf6)', borderRadius: '4px', transition: 'width 0.4s ease' }} />
-        </div>
-        <span style={{ color: '#94a3b8', fontSize: '0.88rem', fontWeight: 700 }}>{runningJob.progress}% Complete • Extracting Skills & Computing ATS Score</span>
-      </div>
-    );
-  }
-
-  // If user clicked View Analysis Hub or if a newly uploaded session is ready, show AnalysisView
-  if (showAnalysisHub) {
-    return <AnalysisView />;
-  }
-
-  const triggerUpload = () => fileInputRef.current?.click();
+  // Real data metrics from backend
+  const readiness = dashboardSummary?.readiness_score || 0;
+  const atsScore = dashboardSummary?.latest_ats_score || 0;
+  const jobMatch = dashboardSummary?.latest_match_percentage || 0;
+  const skillsList = dashboardSummary?.skills_extracted || [];
+  const breakdown = dashboardSummary?.readiness_breakdown || {};
+  const recentMatches = dashboardSummary?.recent_matches || [];
+  const priorityAction = {
+    title: dashboardSummary?.priority_action_title || "Upload Technical Resume",
+    reason: dashboardSummary?.priority_action_reason || "Run your resume through the deterministic 9-factor ATS scorer to extract skills.",
+    module: dashboardSummary?.priority_action_module || "Resume Analyzer"
+  };
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      try {
-        await startNewAnalysis(file, '');
-        setShowAnalysisHub(true);
-      } catch (err) {
-        console.error(err);
-      }
+      await processUpload(file);
     }
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDraggingOver(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setIsDraggingOver(false);
+  const processUpload = async (file) => {
+    setAnalyzing(true);
+    try {
+      await startNewAnalysis(file, '');
+      await refreshDashboard();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setAnalyzing(false);
+      if (fileInputRef.current) fileInputRef.current.value = null;
+    }
   };
 
   const handleDrop = async (e) => {
@@ -78,330 +61,526 @@ export default function Dashboard() {
     setIsDraggingOver(false);
     const file = e.dataTransfer.files?.[0];
     if (file) {
-      try {
-        await startNewAnalysis(file, '');
-        setShowAnalysisHub(true);
-      } catch (err) {
-        console.error(err);
-      }
+      await processUpload(file);
+    }
+  };
+
+  const getModuleRoute = (moduleName) => {
+    switch (moduleName) {
+      case 'Resume Analyzer': return '/resume';
+      case 'Job Matcher': return '/job-matcher';
+      case 'Learning Roadmap': return '/roadmap';
+      case 'Interview Coach': return '/interview';
+      case 'Company Research': return '/company-research';
+      default: return '/resume';
     }
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', width: '100%', maxWidth: '1420px', margin: '0 auto', paddingBottom: '3rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', width: '100%', maxWidth: '1360px', margin: '0 auto', paddingBottom: '3rem' }}>
       <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileChange} accept=".pdf,.docx,.txt" />
 
-      {/* ─── 1. GREETING HEADER ────────────────────────────────────── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+      {/* ─── 1. TOP HEADER & GREETING ─────────────────────────────── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.25rem' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', fontWeight: '900', color: '#ffffff', margin: '0 0 0.3rem 0', letterSpacing: '-0.02em' }}>
-            👋 Welcome back, {profile?.name || 'Shiva'}
-          </h1>
-          <p style={{ fontSize: '0.92rem', color: '#94a3b8', margin: 0, fontWeight: '500' }}>
-            Track your placement readiness, evaluate resumes, and benchmark missing skills.
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.3rem' }}>
+            <h1 style={{ fontSize: '2rem', fontWeight: '900', color: '#ffffff', margin: 0, letterSpacing: '-0.02em' }}>
+              👋 Welcome back, {studentName}
+            </h1>
+            <span style={{
+              background: 'rgba(99, 102, 241, 0.15)',
+              border: '1px solid rgba(99, 102, 241, 0.35)',
+              color: '#a5b4fc',
+              padding: '0.25rem 0.65rem',
+              borderRadius: '999px',
+              fontSize: '0.72rem',
+              fontWeight: '800'
+            }}>
+              {targetRole}
+            </span>
+          </div>
+          <p style={{ fontSize: '0.92rem', color: '#94a3b8', margin: 0 }}>
+            Real-time Placement Readiness calculated deterministically from stored backend records.
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <button
-            onClick={handleResetSession}
+            onClick={() => setShowFormulaModal(true)}
             style={{
-              background: 'rgba(239, 68, 68, 0.12)',
-              border: '1px solid rgba(239, 68, 68, 0.35)',
-              color: '#ef4444',
+              background: '#161d2d',
+              border: '1px solid #28334e',
+              color: '#cbd5e1',
               borderRadius: '12px',
-              padding: '0.7rem 1.1rem',
-              fontSize: '0.88rem',
-              fontWeight: '800',
+              padding: '0.6rem 1rem',
+              fontSize: '0.84rem',
+              fontWeight: '700',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.4rem'
+              gap: '0.5rem',
+              transition: 'all 0.2s'
             }}
           >
-            🔄 Reset Session
+            <span>📐</span>
+            <span>Readiness Formula</span>
           </button>
 
           <button
-            onClick={() => setShowAnalysisHub(true)}
-            style={{
-              background: '#161925',
-              border: '1px solid #2d3342',
-              color: '#ffffff',
-              borderRadius: '12px',
-              padding: '0.7rem 1.4rem',
-              fontSize: '0.88rem',
-              fontWeight: '800',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-            }}
-          >
-            📊 View Full Analysis Hub
-          </button>
-
-          <button
-            onClick={triggerUpload}
+            onClick={() => fileInputRef.current?.click()}
             style={{
               background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
               color: '#ffffff',
               border: 'none',
               borderRadius: '12px',
-              padding: '0.7rem 1.5rem',
+              padding: '0.65rem 1.25rem',
               fontSize: '0.88rem',
               fontWeight: '800',
               cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(99,102,241,0.4)',
+              boxShadow: '0 4px 14px rgba(99, 102, 241, 0.4)',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.45rem'
+              gap: '0.5rem'
             }}
           >
-            ☁️ Upload Resume
+            <span>📄</span>
+            <span>Upload Resume</span>
           </button>
         </div>
       </div>
 
-      {/* ─── 2. TOP KPI METRIC CARDS ─────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1.25rem' }}>
-        {/* Card 1: Target Role */}
-        <div style={{ background: '#161925', border: '1px solid #2d3342', borderRadius: '18px', padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(99,102,241,0.15)', color: '#818cf8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>💼</div>
-            <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>TARGET ROLE</span>
+      {/* ─── 2. PRIORITY ACTION BANNER ────────────────────────────── */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.08))',
+        border: '1px solid rgba(99, 102, 241, 0.35)',
+        borderRadius: '20px',
+        padding: '1.5rem 1.75rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '1.25rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+          <div style={{
+            width: '52px',
+            height: '52px',
+            borderRadius: '16px',
+            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.6rem',
+            boxShadow: '0 8px 20px rgba(99, 102, 241, 0.4)'
+          }}>
+            🎯
           </div>
           <div>
-            <strong style={{ fontSize: '1.05rem', color: '#ffffff', display: 'block' }}>{profile?.preferredRole || 'Software Engineer'}</strong>
-            <span style={{ fontSize: '0.72rem', color: '#6366f1', fontWeight: '800', cursor: 'pointer' }}>Full Stack Dev ➔</span>
+            <div style={{ fontSize: '0.72rem', color: '#818cf8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.2rem' }}>
+              TODAY'S HIGHEST VALUE ACTION • DERIVED FROM REAL GAPS
+            </div>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: '900', color: '#ffffff', margin: '0 0 0.25rem 0' }}>
+              {priorityAction.title}
+            </h3>
+            <p style={{ fontSize: '0.86rem', color: '#94a3b8', margin: 0, maxWidth: '720px' }}>
+              {priorityAction.reason}
+            </p>
           </div>
         </div>
 
-        {/* Card 2: Resumes Analyzed */}
-        <div style={{ background: '#161925', border: '1px solid #2d3342', borderRadius: '18px', padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(168,85,247,0.15)', color: '#c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>📄</div>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase' }}>RESUMES ANALYZED</span>
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: '0.5rem' }}>
-            <div>
-              <span style={{ fontSize: '1.4rem', fontWeight: '900', color: '#ffffff' }}>{activeData.progress?.resumesAnalyzed || 0}</span>
-              <span style={{ fontSize: '0.68rem', color: activeData.progress?.resumesAnalyzed ? '#10b981' : '#94a3b8', marginLeft: '0.5rem', fontWeight: '700' }}>
-                {activeData.progress?.resumesAnalyzed ? '↑ Active' : 'None Uploaded'}
-              </span>
-            </div>
-            <Sparkline color="#c084fc" />
-          </div>
-        </div>
-
-        {/* Card 3: Skills Extracted */}
-        <div style={{ background: '#161925', border: '1px solid #2d3342', borderRadius: '18px', padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(236,72,153,0.15)', color: '#f472b6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>🧠</div>
-            <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase' }}>SKILLS EXTRACTED</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: '0.5rem' }}>
-            <div>
-              <span style={{ fontSize: '1.4rem', fontWeight: '900', color: '#ffffff' }}>
-                {activeData.atsResult?.detectedSkills?.length !== undefined ? activeData.atsResult.detectedSkills.length : '--'}
-              </span>
-              <span style={{ fontSize: '0.68rem', color: '#10b981', marginLeft: '0.5rem', fontWeight: '700' }}>
-                {activeData.atsResult?.detectedSkills ? '↑ Parsed' : 'Awaiting Resume'}
-              </span>
-            </div>
-            <Sparkline color="#f472b6" />
-          </div>
-        </div>
-
-        {/* Card 4: Job Matches */}
-        <div style={{ background: '#161925', border: '1px solid #2d3342', borderRadius: '18px', padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(16,185,129,0.15)', color: '#34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>🎯</div>
-            <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase' }}>JOB MATCHES</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: '0.5rem' }}>
-            <div>
-              <span style={{ fontSize: '1.4rem', fontWeight: '900', color: '#ffffff' }}>
-                {activeData.atsResult?.jobMatchScore !== undefined && activeData.atsResult?.jobMatchScore !== null ? `${activeData.atsResult.jobMatchScore}%` : '--'}
-              </span>
-              <span style={{ fontSize: '0.68rem', color: '#10b981', marginLeft: '0.5rem', fontWeight: '700' }}>
-                {activeData.atsResult?.jobMatchScore !== undefined && activeData.atsResult?.jobMatchScore !== null ? 'Target JD Match' : 'No JD Provided'}
-              </span>
-            </div>
-            <Sparkline color="#34d399" />
-          </div>
-        </div>
-
-        {/* Card 5: Average Readiness */}
-        <div style={{ background: '#161925', border: '1px solid #2d3342', borderRadius: '18px', padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(59,130,246,0.15)', color: '#60a5fa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>📈</div>
-            <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase' }}>ATS READINESS</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: '0.5rem' }}>
-            <div>
-              <span style={{ fontSize: '1.4rem', fontWeight: '900', color: '#ffffff' }}>
-                {activeData.atsResult?.resumeAtsScore !== undefined && activeData.atsResult?.resumeAtsScore !== null
-                  ? `${activeData.atsResult.resumeAtsScore}%`
-                  : 'Not Analyzed'}
-              </span>
-              <span style={{ fontSize: '0.68rem', color: activeData.atsResult?.resumeAtsScore ? '#10b981' : '#f59e0b', marginLeft: '0.5rem', fontWeight: '700' }}>
-                {activeData.atsResult?.resumeAtsScore ? 'ATS Ready' : 'Upload Resume'}
-              </span>
-            </div>
-            <Sparkline color="#60a5fa" />
-          </div>
-        </div>
+        <button
+          onClick={() => navigate(getModuleRoute(priorityAction.module))}
+          style={{
+            background: '#ffffff',
+            color: '#0f172a',
+            border: 'none',
+            borderRadius: '12px',
+            padding: '0.75rem 1.4rem',
+            fontWeight: '800',
+            fontSize: '0.88rem',
+            cursor: 'pointer',
+            boxShadow: '0 4px 14px rgba(255, 255, 255, 0.2)',
+            transition: 'transform 0.2s'
+          }}
+        >
+          Take Action in {priorityAction.module} →
+        </button>
       </div>
 
-      {/* ─── 3. MAIN DASHBOARD CONTENT GRID ─────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.1fr', gap: '1.75rem' }}>
-
-        {/* LEFT COLUMN: YOUR PLACEMENT JOURNEY & RESUME UPLOAD DROPZONE */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
-          
-          {/* YOUR PLACEMENT JOURNEY TIMELINE */}
-          <div style={{ background: '#161925', border: '1px solid #2d3342', borderRadius: '24px', padding: '2rem', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: '900', color: '#ffffff', margin: '0 0 0.25rem 0', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-              YOUR PLACEMENT JOURNEY
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '0 0 2rem 0' }}>
-              Track your active progress metrics and milestones.
-            </p>
-
-            {/* Stepper Line */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', margin: '0 1rem 1.5rem 1rem' }}>
-              <div style={{ position: 'absolute', top: '18px', left: 0, right: 0, height: '3px', background: 'linear-gradient(90deg, #10b981 40%, #2d3342 100%)', zIndex: 1 }} />
-              
-              {[
-                { label: 'Resume', icon: '📄', status: 'Completed', color: '#10b981' },
-                { label: 'Match', icon: '🎯', status: 'Completed', color: '#10b981' },
-                { label: 'Skills', icon: '⚡', status: 'Active', color: '#6366f1' },
-                { label: 'Roadmap', icon: '🗺️', status: 'Planned', color: '#8b5cf6' },
-                { label: 'Interview', icon: '🎤', status: 'Ready', color: '#ec4899' }
-              ].map((step, idx) => (
-                <div 
-                  key={idx}
-                  onClick={() => setShowAnalysisHub(true)}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', zIndex: 2, cursor: 'pointer' }}
-                >
-                  <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#161925', border: `2px solid ${step.color}`, color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: '900', boxShadow: `0 0 12px ${step.color}40` }}>
-                    {step.icon}
-                  </div>
-                  <span style={{ fontSize: '0.78rem', fontWeight: '800', color: '#ffffff' }}>{step.label}</span>
-                  <span style={{ fontSize: '0.65rem', color: step.color, fontWeight: '700' }}>{step.status}</span>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ background: '#0f1117', borderRadius: '14px', padding: '1rem 1.25rem', border: '1px solid #2d3342', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: '500' }}>
-                Complete each step to strengthen your profile and boost your placement readiness.
+      {/* ─── 3. CORE METRICS GRID ─────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
+        
+        {/* Card 1: Readiness Index */}
+        <div style={{
+          background: '#111625',
+          border: '1px solid #28334e',
+          borderRadius: '20px',
+          padding: '1.5rem',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          gap: '1rem',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <span style={{ fontSize: '0.72rem', color: '#818cf8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                COMPOSITE SCORE
               </span>
-              <button onClick={() => setShowAnalysisHub(true)} style={{ background: '#6366f1', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.45rem 1rem', fontSize: '0.78rem', fontWeight: '800', cursor: 'pointer' }}>
-                Open Hub ➔
+              <h4 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#ffffff', margin: '0.2rem 0 0 0' }}>
+                Readiness Index
+              </h4>
+            </div>
+            <div style={{ width: '56px', height: '56px' }}>
+              <ProgressRing percentage={Math.round(readiness)} size={56} strokeWidth={5} color="#6366f1" />
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: '2rem', fontWeight: '900', color: '#ffffff', letterSpacing: '-0.02em' }}>
+              {readiness.toFixed(1)}%
+            </div>
+            <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+              Based on 6 weighted placement pillars
+            </span>
+          </div>
+        </div>
+
+        {/* Card 2: ATS Resume Score */}
+        <div style={{
+          background: '#111625',
+          border: '1px solid #28334e',
+          borderRadius: '20px',
+          padding: '1.5rem',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          gap: '1rem'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <span style={{ fontSize: '0.72rem', color: '#38bdf8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                DETERMINISTIC 9-FACTOR
+              </span>
+              <h4 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#ffffff', margin: '0.2rem 0 0 0' }}>
+                Resume ATS Score
+              </h4>
+            </div>
+            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(56, 189, 248, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
+              📄
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: '2rem', fontWeight: '900', color: atsScore > 0 ? '#38bdf8' : '#64748b', letterSpacing: '-0.02em' }}>
+              {atsScore > 0 ? `${atsScore.toFixed(0)}/100` : 'Not Uploaded'}
+            </div>
+            <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+              {atsScore > 0 ? 'Verified structural ATS readability' : 'Upload PDF/DOCX to score'}
+            </span>
+          </div>
+        </div>
+
+        {/* Card 3: Target Job Match */}
+        <div style={{
+          background: '#111625',
+          border: '1px solid #28334e',
+          borderRadius: '20px',
+          padding: '1.5rem',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          gap: '1rem'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <span style={{ fontSize: '0.72rem', color: '#34d399', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                SKILL OVERLAP
+              </span>
+              <h4 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#ffffff', margin: '0.2rem 0 0 0' }}>
+                Target Job Match
+              </h4>
+            </div>
+            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(52, 211, 153, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
+              💼
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: '2rem', fontWeight: '900', color: jobMatch > 0 ? '#34d399' : '#64748b', letterSpacing: '-0.02em' }}>
+              {jobMatch > 0 ? `${jobMatch.toFixed(0)}%` : 'No Match Run'}
+            </div>
+            <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+              {jobMatch > 0 ? 'Alignment with target role' : 'Target a job description'}
+            </span>
+          </div>
+        </div>
+
+        {/* Card 4: Daily Consistency & DSA */}
+        <div style={{
+          background: '#111625',
+          border: '1px solid #28334e',
+          borderRadius: '20px',
+          padding: '1.5rem',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          gap: '1rem'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <span style={{ fontSize: '0.72rem', color: '#f59e0b', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                ACTIVE STREAK & DSA
+              </span>
+              <h4 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#ffffff', margin: '0.2rem 0 0 0' }}>
+                Practice Consistency
+              </h4>
+            </div>
+            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(245, 158, 11, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
+              🔥
+            </div>
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem' }}>
+              <div style={{ fontSize: '2rem', fontWeight: '900', color: '#f59e0b', letterSpacing: '-0.02em' }}>
+                {streak} Days
+              </div>
+              <span style={{ fontSize: '0.9rem', color: '#cbd5e1', fontWeight: '800' }}>
+                • {dsaSolved} Solved
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.2rem' }}>
+              <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>Persisted in SQLite database</span>
+              <button
+                onClick={() => logDsaProblem(1)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#34d399',
+                  fontSize: '0.78rem',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  padding: 0
+                }}
+              >
+                +1 Problem
               </button>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* INTEGRATED RESUME UPLOAD DROPZONE */}
-          <div 
-            onClick={triggerUpload}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            style={{
-              background: isDraggingOver ? 'rgba(99, 102, 241, 0.12)' : '#161925',
-              border: `2px dashed ${isDraggingOver ? '#818cf8' : '#2d3342'}`,
-              borderRadius: '24px',
-              padding: '2.5rem 2rem',
-              textAlign: 'center',
-              cursor: 'pointer',
-              transition: 'all 0.25s ease',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '1rem'
-            }}
-          >
-            <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)', color: '#818cf8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem' }}>
-              ☁️
-            </div>
-            <div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: '900', color: '#ffffff', margin: '0 0 0.35rem 0' }}>
-                Upload or Drop Your Resume to Re-Analyze
-              </h3>
-              <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: 0, fontWeight: '500' }}>
-                Supports PDF, DOCX, and TXT • Automatic ATS & Skill Gap Parsing
-              </p>
-            </div>
-            <button
-              onClick={(e) => { e.stopPropagation(); triggerUpload(); }}
-              style={{
-                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '10px',
-                padding: '0.65rem 1.6rem',
-                fontSize: '0.85rem',
-                fontWeight: '800',
-                cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)'
-              }}
-            >
-              Select Resume File
-            </button>
+      {/* ─── 4. RESUME UPLOAD DROPZONE & VERIFIED SKILLS ───────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem' }}>
+        
+        {/* Upload Dropzone */}
+        <div
+          onDragOver={(e) => { e.preventDefault(); setIsDraggingOver(true); }}
+          onDragLeave={(e) => { e.preventDefault(); setIsDraggingOver(false); }}
+          onDrop={handleDrop}
+          style={{
+            background: isDraggingOver ? 'rgba(99, 102, 241, 0.12)' : '#111625',
+            border: `2px dashed ${isDraggingOver ? '#818cf8' : '#28334e'}`,
+            borderRadius: '24px',
+            padding: '2.5rem 2rem',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            gap: '1rem',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <div style={{
+            width: '64px',
+            height: '64px',
+            borderRadius: '20px',
+            background: 'rgba(99, 102, 241, 0.15)',
+            border: '1px solid rgba(99, 102, 241, 0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '2rem'
+          }}>
+            {analyzing ? '⏳' : '📤'}
           </div>
 
+          <div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#ffffff', margin: '0 0 0.35rem 0' }}>
+              {analyzing ? 'Evaluating Resume ATS Score…' : 'Upload or Drag & Drop Resume'}
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: 0, maxWidth: '380px' }}>
+              Supports PDF, DOCX, and TXT files up to 10 MB. Encrypted or empty files are safely rejected.
+            </p>
+          </div>
+
+          <span style={{
+            background: '#161d2d',
+            border: '1px solid #28334e',
+            color: '#a5b4fc',
+            padding: '0.45rem 1rem',
+            borderRadius: '10px',
+            fontSize: '0.82rem',
+            fontWeight: '700'
+          }}>
+            Browse Local File
+          </span>
         </div>
 
-        {/* RIGHT COLUMN: ACTIVE ACTION & TOP SKILL GAPS (CLEAN, NO 0%!) */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
-          
-          {/* NEXT BEST ACTION CARD */}
-          <div style={{ background: '#161925', border: '1px solid #2d3342', borderRadius: '24px', padding: '1.75rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(99,102,241,0.15)', color: '#818cf8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem' }}>
-              ⚡
-            </div>
+        {/* Verified Skills Stack */}
+        <div style={{
+          background: '#111625',
+          border: '1px solid #28334e',
+          borderRadius: '24px',
+          padding: '2rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1.25rem'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>NEXT BEST ACTION</span>
-              <h4 style={{ fontSize: '1.05rem', fontWeight: '900', color: '#ffffff', margin: '2px 0' }}>Review Week 1 System Design Roadmap</h4>
-              <span style={{ fontSize: '0.78rem', color: '#818cf8', fontWeight: '800', cursor: 'pointer' }} onClick={() => navigate('/roadmap')}>Start Learning Tasks ➔</span>
+              <span style={{ fontSize: '0.72rem', color: '#818cf8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                AUTHENTIC PROFILE
+              </span>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#ffffff', margin: '0.2rem 0 0 0' }}>
+                Verified Skill Footprint
+              </h3>
             </div>
+            <span style={{
+              background: 'rgba(99, 102, 241, 0.15)',
+              color: '#818cf8',
+              fontSize: '0.75rem',
+              fontWeight: '800',
+              padding: '0.25rem 0.6rem',
+              borderRadius: '8px'
+            }}>
+              {skillsList.length} Verified
+            </span>
           </div>
 
-          {/* TOP SKILL GAPS (CLEAN PRIORITY TAGS, NO 0%!) */}
-          <div style={{ background: '#161925', border: '1px solid #2d3342', borderRadius: '24px', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: '900', color: '#ffffff', margin: 0, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                TOP SKILL GAPS TO CLOSE
-              </h3>
-              <span style={{ fontSize: '0.75rem', color: '#6366f1', fontWeight: '800', cursor: 'pointer' }} onClick={() => navigate('/skills')}>View All ➔</span>
+          {skillsList.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔍</div>
+              <p style={{ fontSize: '0.9rem', margin: 0 }}>No skills extracted yet. Upload a resume to populate your verified skill profile.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', maxHeight: '180px', overflowY: 'auto' }}>
+              {skillsList.map(skill => (
+                <span
+                  key={skill}
+                  style={{
+                    background: '#161d2d',
+                    border: '1px solid #28334e',
+                    color: '#e2e8f0',
+                    padding: '0.4rem 0.85rem',
+                    borderRadius: '10px',
+                    fontSize: '0.82rem',
+                    fontWeight: '700'
+                  }}
+                >
+                  {skill}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid #1e2638', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Target: 10 core placement skills</span>
+            <button
+              onClick={() => navigate('/skill-gap')}
+              style={{ background: 'none', border: 'none', color: '#818cf8', fontWeight: '800', fontSize: '0.82rem', cursor: 'pointer', padding: 0 }}
+            >
+              Analyze Skill Gaps →
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── 5. READINESS BREAKDOWN MODAL ─────────────────────────── */}
+      {showFormulaModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(9, 11, 16, 0.85)',
+          backdropFilter: 'blur(16px)',
+          zIndex: 99999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1.5rem'
+        }}>
+          <div style={{
+            background: '#111625',
+            border: '1px solid #28334e',
+            borderRadius: '24px',
+            width: '100%',
+            maxWidth: '650px',
+            padding: '2.5rem',
+            color: '#ffffff',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.8)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+              <div>
+                <span style={{ fontSize: '0.72rem', color: '#818cf8', fontWeight: '800', textTransform: 'uppercase' }}>DOCUMENTED WEIGHTED MODEL</span>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: '900', margin: '0.2rem 0 0 0' }}>Readiness Index Formula</h3>
+              </div>
+              <button
+                onClick={() => setShowFormulaModal(false)}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '1.4rem', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ background: '#0a0d14', border: '1px solid #1e2638', padding: '1rem', borderRadius: '12px', fontSize: '0.85rem', color: '#a5b4fc', marginBottom: '1.5rem', fontFamily: 'monospace' }}>
+              Readiness = 20% Resume + 25% Skills + 20% Job Match + 20% Interview + 10% DSA + 5% Progress
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-              {[
-                { name: 'System Design & Distributed Scalability', priority: 'Critical', color: '#ef4444' },
-                { name: 'Docker Compose & Kubernetes Deployments', priority: 'High', color: '#f59e0b' },
-                { name: 'Advanced PostgreSQL B-Tree Query Tuning', priority: 'Medium', color: '#3b82f6' }
-              ].map((gap, i) => (
-                <div key={i} style={{ background: '#0f1117', border: '1px solid #2d3342', borderRadius: '12px', padding: '0.9rem 1.1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.88rem', fontWeight: '700', color: '#ffffff' }}>{gap.name}</span>
-                  <span style={{ fontSize: '0.7rem', background: `${gap.color}20`, color: gap.color, border: `1px solid ${gap.color}40`, padding: '0.2rem 0.6rem', borderRadius: '6px', fontWeight: '800' }}>
-                    {gap.priority}
-                  </span>
-                </div>
-              ))}
+              {Object.entries(breakdown).map(([key, item]) => {
+                const labels = {
+                  resume_quality: '1. Resume Quality (20% max)',
+                  skills: '2. Technical Skills (25% max)',
+                  job_match: '3. Job Match Alignment (20% max)',
+                  interview_performance: '4. Interview Performance (20% max)',
+                  dsa_assessment: '5. DSA Problem Solving (10% max)',
+                  learning_progress: '6. Learning Roadmap Progress (5% max)'
+                };
+                return (
+                  <div key={key} style={{ background: '#161d2d', padding: '0.85rem 1rem', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: '0.88rem', fontWeight: '800' }}>{labels[key] || key}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{item.status}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '0.95rem', fontWeight: '900', color: '#38bdf8' }}>+{item.contribution}%</div>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Score: {item.score}%</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{ marginTop: '1.5rem', textAlign: 'right' }}>
+              <button
+                onClick={() => setShowFormulaModal(false)}
+                style={{
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '0.7rem 1.5rem',
+                  fontWeight: '800',
+                  cursor: 'pointer'
+                }}
+              >
+                Close Breakdown
+              </button>
             </div>
           </div>
-
         </div>
-
-      </div>
-
+      )}
     </div>
   );
 }

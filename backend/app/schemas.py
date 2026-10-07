@@ -12,10 +12,15 @@ class TokenData(BaseModel):
     user_id: Optional[str] = None
 
 # User Schemas
+# User Schemas
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
     full_name: Optional[str] = None
+    target_role: Optional[str] = "Software Engineer"
+    target_companies: Optional[List[str]] = ["Amazon", "Google", "Microsoft", "TCS"]
+    preparation_level: Optional[str] = "Intermediate"
+    target_company_tier: Optional[str] = "Tier 2"
     is_admin: Optional[bool] = False
 
 class UserLogin(BaseModel):
@@ -26,13 +31,35 @@ class UserOut(BaseModel):
     id: str
     email: EmailStr
     full_name: Optional[str] = None
+    target_role: Optional[str] = "Software Engineer"
+    target_companies: Optional[List[str]] = []
+    preparation_level: Optional[str] = "Intermediate"
     target_company_tier: str = "Tier 2"
+    current_streak: int = 1
+    longest_streak: int = 1
+    dsa_problems_solved: int = 0
     is_active: bool
     is_admin: bool
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserOut
+
+class UpdateUserProfileRequest(BaseModel):
+    full_name: Optional[str] = None
+    target_role: Optional[str] = None
+    target_companies: Optional[List[str]] = None
+    preparation_level: Optional[str] = None
+    target_company_tier: Optional[str] = None
+
+class ActivityLogRequest(BaseModel):
+    category: str # "DSA", "TASK", "RESUME", "INTERVIEW"
+    details: Optional[Dict[str, Any]] = None
 
 class UpdateUserTierRequest(BaseModel):
     target_company_tier: str
@@ -74,14 +101,17 @@ class ResumeOut(BaseModel):
 
 # Deterministic ATS Scoring Response Schemas
 class ATSBreakdownOut(BaseModel):
-    readability: int
-    sections: int
-    contact: int
-    skills: int
-    experience: int
-    achievements: int
-    education: int
-    formatting: int
+    contact: float = 0.0
+    education: float = 0.0
+    skills: float = 0.0
+    projects: float = 0.0
+    experience: float = 0.0
+    certifications: float = 0.0
+    keywords: float = 0.0
+    formatting: float = 0.0
+    sections: float = 0.0
+    readability: float = 0.0
+    achievements: float = 0.0
 
 class ATSScoringResponse(BaseModel):
     resumeAtsScore: float
@@ -233,10 +263,16 @@ class DashboardSummaryOut(BaseModel):
     latest_match_percentage: float
     skills_extracted: List[str]
     readiness_score: float # calculated metric
+    readiness_breakdown: Optional[Dict[str, Any]] = None
+    readiness_formula: Optional[str] = "Readiness = 20% Resume + 25% Skills + 20% Job Match + 20% Interview + 10% DSA + 5% Progress"
+    why_changed: Optional[str] = None
+    streak_count: int = 1
+    dsa_problems_solved: int = 0
     recent_matches: List[MatchOut]
     priority_action_title: Optional[str] = "Complete Resume & Skill Setup"
     priority_action_reason: Optional[str] = "Upload your target job description to pinpoint critical technical skill gaps."
     priority_action_module: Optional[str] = "Resume/Matching"
+    student_profile: Optional[UserOut] = None
 
 # Resume Version Schemas
 class ResumeVersionOut(BaseModel):
@@ -271,6 +307,7 @@ class InterviewHistoryOut(BaseModel):
     grammar_score: float
     technical_score: float
     confidence_score: float
+    rubric_scores: Optional[Dict[str, float]] = None
     detailed_feedback: Optional[Dict[str, Any]] = {}
     qna_records: Optional[List[Dict[str, Any]]] = []
     created_at: datetime
