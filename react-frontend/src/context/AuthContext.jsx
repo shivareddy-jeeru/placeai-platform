@@ -2,7 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+const isProd = typeof window !== 'undefined' && !window.location.hostname.includes('localhost');
+const API_BASE = import.meta.env.VITE_API_BASE_URL || (isProd ? '/api' : 'http://localhost:8000/api');
 
 async function apiPost(path, body, token = null) {
   const headers = { 'Content-Type': 'application/json' };
