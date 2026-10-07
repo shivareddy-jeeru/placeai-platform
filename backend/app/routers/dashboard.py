@@ -1,127 +1,168 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from typing import List
 
 from backend.app.database import get_db
 from backend.app import models, schemas
-from backend.app.session import get_session_id_from_request
+from backend.app.security import get_current_user
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
+
 
 @router.get("/summary", response_model=schemas.DashboardSummaryOut)
 def get_dashboard_summary(
     db: Session = Depends(get_db),
-    session_id: str = Depends(get_session_id_from_request)
+    current_user: models.User = Depends(get_current_user),
 ):
-    # Total Resumes in session
-    total_resumes = db.query(models.Resume).filter(models.Resume.session_id == session_id).count()
-    
-    # Total Job Descriptions in session
-    total_jobs = db.query(models.JobDescription).filter(models.JobDescription.session_id == session_id).count()
-    
-    # Latest ATS Score
-    latest_resume = db.query(models.Resume).filter(
-        models.Resume.session_id == session_id
-    ).order_by(models.Resume.created_at.desc()).first()
-    latest_ats_score = latest_resume.ats_score if latest_resume else 0.0
+    """
+    Returns a live dashboard summary calculated from the authenticated user's
+    actual stored data. No hard-coded values.
 
-    # Recent matches & Latest Match percentage
-    recent_matches = db.query(models.ResumeMatch).filter(
-        models.ResumeMatch.session_id == session_id
-    ).order_by(models.ResumeMatch.created_at.desc()).limit(5).all()
-    
+    Readiness Formula (documented):
+        Resume Quality   20%  → latest ATS score × 0.20
+        Job Match        20%  → latest match % × 0.20
+        Interview Score  20%  → (latest interview overall_score / 10) × 100 × 0.20
+        Skills           15%  → skill count bonus (capped at 15)
+        Learning Roadmap 15%  → completed tasks ratio × 0.15
+        Interview Prep   10%  → prep session count bonus (capped at 10)
+    Total = min(sum, 100)
+    """
+    uid = current_user.id
+
+    # ── Total counts ───────────────────────────────────────────────────────────
+    total_resumes = db.query(models.Resume).filter(models.Resume.user_id == uid).count()
+    total_jobs = db.query(models.JobDescription).filter(models.JobDescription.user_id == uid).count()
+
+    # ── Latest Resume ATS score ────────────────────────────────────────────────
+    latest_resume = (
+        db.query(models.Resume)
+        .filter(models.Resume.user_id == uid)
+        .order_by(models.Resume.created_at.desc())
+        .first()
+    )
+    latest_ats_score = latest_resume.ats_score if latest_resume else 0.0
+    skills_set: set = set()
+    if latest_resume and latest_resume.extracted_skills:
+        skills_set.update(latest_resume.extracted_skills)
+
+    # Collect all skills across resumes for accuracy
+    all_resumes = db.query(models.Resume).filter(models.Resume.user_id == uid).all()
+    for r in all_resumes:
+        if r.extracted_skills:
+            skills_set.update(r.extracted_skills)
+
+    # ── Latest Job Match ───────────────────────────────────────────────────────
+    recent_matches = (
+        db.query(models.ResumeMatch)
+        .join(models.Resume, models.ResumeMatch.resume_id == models.Resume.id)
+        .filter(models.Resume.user_id == uid)
+        .order_by(models.ResumeMatch.created_at.desc())
+        .limit(5)
+        .all()
+    )
     latest_match_percentage = recent_matches[0].match_percentage if recent_matches else 0.0
 
-    # Skills Extracted
-    skills_set = set()
-    resumes = db.query(models.Resume).filter(models.Resume.session_id == session_id).all()
-    for resume in resumes:
-        if resume.extracted_skills:
-            for skill in resume.extracted_skills:
-                skills_set.add(skill)
-                
-    # Interview History Score
-    latest_interview = db.query(models.InterviewHistory).filter(
-        models.InterviewHistory.session_id == session_id
-    ).order_by(models.InterviewHistory.created_at.desc()).first()
-    interview_score = (latest_interview.overall_score * 10.0) if latest_interview else 0.0
+    # ── Latest Interview Score ─────────────────────────────────────────────────
+    latest_interview = (
+        db.query(models.InterviewHistory)
+        .filter(models.InterviewHistory.user_id == uid)
+        .order_by(models.InterviewHistory.created_at.desc())
+        .first()
+    )
+    # overall_score stored as 0-10; convert to 0-100
+    interview_score_100 = (latest_interview.overall_score * 10.0) if latest_interview else 0.0
 
-    # Readiness Score calculation:
-    prep_count = db.query(models.InterviewPrep).filter(models.InterviewPrep.session_id == session_id).count()
-    prep_bonus = min(prep_count * 5.0, 15.0)
-    
-    latest_roadmap = db.query(models.LearningRoadmap).filter(
-        models.LearningRoadmap.session_id == session_id
-    ).order_by(models.LearningRoadmap.created_at.desc()).first()
-    
-    roadmap_bonus = 0.0
+    # ── Roadmap progress ───────────────────────────────────────────────────────
+    latest_roadmap = (
+        db.query(models.LearningRoadmap)
+        .filter(models.LearningRoadmap.user_id == uid)
+        .order_by(models.LearningRoadmap.created_at.desc())
+        .first()
+    )
+    roadmap_component = 0.0
     if latest_roadmap:
         completed_count = len(latest_roadmap.completed_tasks or [])
-        roadmap_bonus = min((completed_count / 5.0) * 15.0, 15.0)
-    
-    base_readiness = (latest_ats_score * 0.35) + (latest_match_percentage * 0.35) + (interview_score * 0.30)
-    if latest_ats_score == 0.0 and latest_match_percentage == 0.0 and interview_score == 0.0:
-        base_readiness = 20.0 # baseline
-        
-    readiness_score = min(base_readiness + prep_bonus + roadmap_bonus, 100.0)
+        # Assume 10 tasks per roadmap for normalisation
+        roadmap_component = min((completed_count / 10.0) * 15.0, 15.0)
 
-    # Dynamic Personalized Recommendation Logic ("Today's Highest Priority Action")
+    # ── Interview prep sessions ────────────────────────────────────────────────
+    prep_count = (
+        db.query(models.InterviewPrep)
+        .filter(models.InterviewPrep.user_id == uid)
+        .count()
+    )
+    prep_component = min(prep_count * 2.0, 10.0)
+
+    # ── Skills component ───────────────────────────────────────────────────────
+    skill_count = len(skills_set)
+    # 1 point per unique skill, capped at 15 points (≥15 skills = full marks)
+    skills_component = min(skill_count, 15.0)
+
+    # ── Readiness formula ──────────────────────────────────────────────────────
+    readiness_score = (
+        latest_ats_score * 0.20
+        + latest_match_percentage * 0.20
+        + interview_score_100 * 0.20
+        + skills_component
+        + roadmap_component
+        + prep_component
+    )
+    readiness_score = round(min(readiness_score, 100.0), 1)
+
+    # ── Priority action ────────────────────────────────────────────────────────
     if latest_ats_score == 0.0:
-        action_title = "Upload Your Technical Resume"
-        action_reason = "Analyze your ATS formatting and extract your technical skill stack to unlock personalized matches."
+        action_title = "Upload Your Resume"
+        action_reason = "Start by uploading your resume to get your ATS score, extract your skills, and unlock personalized insights."
         action_module = "Resume Analyzer"
     elif latest_match_percentage == 0.0:
-        action_title = "Target a Job Description"
-        action_reason = "Match your resume against a target role to discover technical skill gaps and generate a custom study plan."
+        action_title = "Match Against a Job Description"
+        action_reason = "Paste a target job description to discover exactly which skills you are missing and get a ranked skill gap plan."
         action_module = "Job Matcher"
     elif recent_matches and recent_matches[0].missing_skills:
         missing_top = recent_matches[0].missing_skills[:2]
         action_title = f"Bridge Skill Gap: {', '.join(missing_top)}"
-        action_reason = f"Your target job requires {', '.join(missing_top)}. Complete your generated learning roadmap to boost compatibility."
+        action_reason = f"Your target role requires {', '.join(missing_top)}. Start the learning roadmap to close these gaps."
         action_module = "Learning Roadmap"
-    elif interview_score == 0.0:
-        action_title = "Practice Mock Technical Interview"
-        action_reason = "Test your technical communication and receive STAR-structured feedback."
+    elif interview_score_100 == 0.0:
+        action_title = "Practice a Mock Interview"
+        action_reason = "Attempt a mock interview to get AI-scored feedback on technical accuracy and communication."
         action_module = "Interview Coach"
-    elif interview_score < 70.0:
-        action_title = "Improve Interview Technical Score"
-        action_reason = "Your recent interview score was under 7/10. Re-attempt mock interview questions focusing on code complexity and STAR format."
+    elif interview_score_100 < 60.0:
+        action_title = "Improve Interview Score"
+        action_reason = "Your last interview scored below 60%. Re-attempt focusing on STAR structure and technical precision."
         action_module = "Interview Coach"
     else:
-        action_title = "Ready for Placement Applications"
-        action_reason = "Your profile shows strong alignment with target roles. Use Company Research to study hiring trends and interview patterns."
+        action_title = "You're Placement Ready!"
+        action_reason = "Strong profile across all metrics. Use Company Research to study hiring processes at target companies."
         action_module = "Company Research"
 
-    # Map database objects to MatchOut schema
-    matches_out = []
-    for match in recent_matches:
-        matches_out.append(
-            schemas.MatchOut(
-                id=match.id,
-                resume_id=match.resume_id,
-                job_id=match.job_id,
-                session_id=match.session_id,
-                match_percentage=match.match_percentage,
-                skill_score=match.skill_score,
-                experience_score=match.experience_score,
-                keyword_score=match.keyword_score,
-                semantic_score=match.semantic_score,
-                missing_skills=match.missing_skills or [],
-                recommendations=match.recommendations or [],
-                created_at=match.created_at
-            )
+    # ── Serialize matches ──────────────────────────────────────────────────────
+    matches_out = [
+        schemas.MatchOut(
+            id=m.id,
+            resume_id=m.resume_id,
+            job_id=m.job_id,
+            session_id=None,
+            match_percentage=m.match_percentage,
+            skill_score=m.skill_score,
+            experience_score=m.experience_score,
+            keyword_score=m.keyword_score,
+            semantic_score=m.semantic_score,
+            missing_skills=m.missing_skills or [],
+            recommendations=m.recommendations or [],
+            created_at=m.created_at,
         )
+        for m in recent_matches
+    ]
 
     return schemas.DashboardSummaryOut(
         total_resumes=total_resumes,
         total_jobs=total_jobs,
         latest_ats_score=latest_ats_score,
         latest_match_percentage=latest_match_percentage,
-        skills_extracted=list(skills_set),
-        readiness_score=round(readiness_score, 1),
+        skills_extracted=sorted(skills_set),
+        readiness_score=readiness_score,
         recent_matches=matches_out,
         priority_action_title=action_title,
         priority_action_reason=action_reason,
-        priority_action_module=action_module
+        priority_action_module=action_module,
     )
-

@@ -11,72 +11,98 @@ from backend.app.database import get_db
 from backend.app import models, schemas
 from backend.app.agents.resume_agent import ResumeAgent
 from backend.app.rate_limiting import limiter, get_rate_limit
-from backend.app.session import get_session_id_from_request, get_or_create_session, update_session_resume
+from backend.app.security import get_current_user
+from backend.app.services.ats_scorer import ats_scorer
 
 router = APIRouter(prefix="/resume", tags=["resume"])
 resume_agent = ResumeAgent()
-
 logger = logging.getLogger(__name__)
 
-def extract_text_from_file(file: UploadFile) -> str:
-    content_type = file.content_type
+# Allowed MIME types and extensions
+ALLOWED_EXTENSIONS = {".pdf", ".docx"}
+ALLOWED_MIMES = {
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/msword",
+}
+MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
+
+
+def validate_and_extract_text(file: UploadFile) -> str:
+    """
+    Validates extension, MIME type, file size, and actual content structure.
+    Raises HTTP 400 / 415 / 413 with user-safe messages on failure.
+    Returns extracted plain text.
+    """
     filename = file.filename or ""
-    
+    ext = "." + filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    content_type = file.content_type or ""
+
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=415,
+            detail=f"Unsupported file type '{ext}'. Please upload a PDF or DOCX file.",
+        )
+
+    # Read bytes once
+    file.file.seek(0)
+    raw_bytes = file.file.read()
+
+    if len(raw_bytes) == 0:
+        raise HTTPException(status_code=400, detail="The uploaded file is empty.")
+    if len(raw_bytes) > MAX_FILE_SIZE_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail="File exceeds the 5 MB size limit. Please compress or trim your resume.",
+        )
+
     try:
-        file.file.seek(0)
-        if filename.endswith(".pdf") or content_type == "application/pdf":
-            pdf_bytes = file.file.read()
-            reader = PdfReader(io.BytesIO(pdf_bytes))
+        if ext == ".pdf":
+            reader = PdfReader(io.BytesIO(raw_bytes))
             text = ""
             for page in reader.pages:
                 text += page.extract_text() or ""
+            if not text.strip():
+                raise HTTPException(
+                    status_code=422,
+                    detail="Could not extract text from this PDF. It may be scanned, image-based, or password-protected.",
+                )
             return text
-            
-        elif filename.endswith(".docx") or content_type in [
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "application/msword"
-        ]:
-            docx_bytes = file.file.read()
-            doc = DocxDocument(io.BytesIO(docx_bytes))
-            text = "\n".join([p.text for p in doc.paragraphs])
-            return text
-            
         else:
-            content = file.file.read()
-            return content.decode("utf-8")
+            doc = DocxDocument(io.BytesIO(raw_bytes))
+            text = "\n".join([p.text for p in doc.paragraphs])
+            if not text.strip():
+                raise HTTPException(
+                    status_code=422,
+                    detail="Could not extract text from this DOCX file.",
+                )
+            return text
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error parsing uploaded file {filename}: {e}")
+        logger.error(f"Error parsing uploaded file '{filename}': {e}")
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Could not parse resume file: {str(e)}"
+            status_code=422,
+            detail="Could not parse the resume file. Please ensure it is a valid, uncorrupted PDF or DOCX.",
         )
 
-from backend.app.services.ats_scorer import ats_scorer
 
-@router.post("/ats-score", response_model=schemas.ATSScoringResponse, status_code=status.HTTP_200_OK)
+@router.post("/ats-score", response_model=schemas.ATSScoringResponse)
 @limiter.limit(get_rate_limit("upload"))
 def score_resume_ats(
     request: Request,
     file: UploadFile = File(...),
     job_description: str = None,
     db: Session = Depends(get_db),
-    session_id: str = Depends(get_session_id_from_request)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
-    Deterministic ATS scoring pipeline. Extracts PDF/DOCX text, calculates structural ATS
-    readability sub-scores, metrics presence, contact links, and JD match score.
+    Deterministic ATS scoring endpoint.
+    Validates, extracts, and scores the resume using the deterministic engine.
+    Scores are never set by the client.
     """
-    text = extract_text_from_file(file)
-    if not text.strip():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The uploaded resume file contains no readable text or is empty."
-        )
-
-    # 1. Deterministic Resume ATS Score
+    text = validate_and_extract_text(file)
     ats_eval = ats_scorer.calculate_resume_ats_score(text)
-
-    # 2. Deterministic Job Match Score if JD text is provided
     jd_eval = ats_scorer.calculate_job_match_score(text, job_description or "")
 
     return schemas.ATSScoringResponse(
@@ -89,36 +115,28 @@ def score_resume_ats(
         matchedSkills=jd_eval["matchedSkills"],
         missingSkills=jd_eval["missingSkills"],
         warnings=ats_eval["warnings"],
-        recommendations=jd_eval["recommendations"]
+        recommendations=jd_eval["recommendations"],
     )
 
-@router.post("/analyze", response_model=schemas.ResumeOut, status_code=status.HTTP_201_CREATED)
+
+@router.post("/analyze", response_model=schemas.ResumeOut, status_code=201)
 @limiter.limit(get_rate_limit("upload"))
 def analyze_resume(
-    request: Request, file: UploadFile = File(...),
+    request: Request,
+    file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    session_id: str = Depends(get_session_id_from_request)
+    current_user: models.User = Depends(get_current_user),
 ):
-    # Extract text from file
-    text = extract_text_from_file(file)
-    if not text.strip():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The uploaded resume appears to be empty."
-        )
-
-    # Process resume using ResumeAgent
+    """
+    Full resume analysis pipeline. Associates result with the authenticated user.
+    """
+    text = validate_and_extract_text(file)
     analysis = resume_agent.run({"resume_text": text})
     if "error" in analysis:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Resume agent failed: {analysis['error']}"
-        )
+        raise HTTPException(status_code=500, detail="Resume analysis failed. Please try again.")
 
-    # Save to database with session_id
     db_resume = models.Resume(
-        session_id=session_id,
-        user_id=None,
+        user_id=current_user.id,
         filename=file.filename or "uploaded_resume",
         extracted_skills=analysis.get("extracted_skills", []),
         education=analysis.get("education", []),
@@ -129,67 +147,55 @@ def analyze_resume(
         strengths=analysis.get("strengths", []),
         faults=analysis.get("faults", []),
         suitable_roles=analysis.get("suitable_roles", []),
-        roadmap=analysis.get("roadmap", {})
+        roadmap=analysis.get("roadmap", {}),
     )
-    
     db.add(db_resume)
     db.commit()
     db.refresh(db_resume)
-
-    # Update active SessionState
-    update_session_resume(db, session_id, analysis, resume_id=db_resume.id)
-
     return db_resume
 
-@router.get("/analysis", response_model=schemas.ResumeOut)
-def get_current_analysis(
-    db: Session = Depends(get_db),
-    session_id: str = Depends(get_session_id_from_request)
-):
-    # Get active session details
-    session_obj = get_or_create_session(db, session_id)
-    if not session_obj.active_resume_id:
-        raise HTTPException(status_code=404, detail="No resume uploaded in this session yet.")
 
-    resume = db.query(models.Resume).filter(
-        models.Resume.id == session_obj.active_resume_id,
-        models.Resume.session_id == session_id
-    ).first()
-    
+@router.get("/analysis", response_model=schemas.ResumeOut)
+def get_latest_analysis(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Returns the user's most recently analyzed resume."""
+    resume = (
+        db.query(models.Resume)
+        .filter(models.Resume.user_id == current_user.id)
+        .order_by(models.Resume.created_at.desc())
+        .first()
+    )
     if not resume:
-        raise HTTPException(status_code=404, detail="Resume analysis details not found.")
+        raise HTTPException(status_code=404, detail="No resume analysis found. Please upload your resume first.")
     return resume
+
 
 @router.get("", response_model=List[schemas.ResumeOut])
 def list_resumes(
     db: Session = Depends(get_db),
-    session_id: str = Depends(get_session_id_from_request)
+    current_user: models.User = Depends(get_current_user),
 ):
-    resumes = db.query(models.Resume).filter(models.Resume.session_id == session_id).all()
-    return resumes
+    """Returns all resumes belonging to the authenticated user."""
+    return db.query(models.Resume).filter(models.Resume.user_id == current_user.id).all()
 
-@router.delete("/{resume_id}", status_code=status.HTTP_204_NO_CONTENT)
+
+@router.delete("/{resume_id}", status_code=204)
 def delete_resume(
     resume_id: str,
     db: Session = Depends(get_db),
-    session_id: str = Depends(get_session_id_from_request)
+    current_user: models.User = Depends(get_current_user),
 ):
-    resume = db.query(models.Resume).filter(
-        models.Resume.id == resume_id,
-        models.Resume.session_id == session_id
-    ).first()
+    """Deletes a resume owned by the authenticated user. Returns 403 if not the owner."""
+    resume = (
+        db.query(models.Resume)
+        .filter(models.Resume.id == resume_id, models.Resume.user_id == current_user.id)
+        .first()
+    )
     if not resume:
-        raise HTTPException(status_code=404, detail="Resume not found")
-    
-    # Clean up from session state if active
-    session_obj = get_or_create_session(db, session_id)
-    if session_obj.active_resume_id == resume_id:
-        session_obj.active_resume_id = None
-        session_obj.resume_data = None
-        db.commit()
-
+        # Return 404 to avoid leaking whether the resource exists under another user
+        raise HTTPException(status_code=404, detail="Resume not found.")
     db.delete(resume)
     db.commit()
     return None
-
-

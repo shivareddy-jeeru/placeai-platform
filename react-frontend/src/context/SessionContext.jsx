@@ -1,272 +1,114 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { calculateReadiness } from '../utils/readinessCalculator';
-import { calculateNextBestAction } from '../utils/nextBestAction';
-import { checkAchievements } from '../utils/achievementEngine';
-import { EVENTS } from '../utils/eventEmitter';
 import api from '../utils/api';
 
 const SessionContext = createContext();
 
-const baseProfile = {
-  identity: {
-    name: 'Shiva',
-    targetRole: 'Software Engineer',
-    targetCompanies: ['Amazon', 'TCS'],
-    preparationLevel: 'Intermediate'
-  },
-  scores: {
-    readiness: 72,
-    resume: null,
-    interview: 71,
-    jobMatch: null,
-    skills: 68
-  },
-  progress: {
-    dsaProblemsSolved: 47,
-    interviewsCompleted: 0,
-    resumesAnalyzed: 0,
-    tasksCompleted: 1
-  },
-  consistency: {
-    currentStreak: 6,
-    longestStreak: 6,
-    lastActiveDate: null
-  },
-  journey: {
-    resume: null,
-    skills: 68,
-    preparation: 54,
-    interviews: 42
-  },
-  onboarding: {
-    completed: true,
-    currentStep: 3
-  },
-  atsResult: null,
-  dailyPlan: [
-    { id: 'dsa-arrays', title: 'Solve 2 Medium Array & Tree Problems', category: 'DSA', duration: 25, completed: false },
-    { id: 'resume-impact', title: 'Improve Resume Impact Statements', category: 'Resume', duration: 10, completed: true },
-    { id: 'interview-prep', title: 'Practice 5 Behavioral Interview Questions', category: 'Interview', duration: 20, completed: false }
-  ]
-};
-
-export const initialPlacementProfile = {
-  ...baseProfile,
-  nextAction: calculateNextBestAction(baseProfile),
-  achievements: checkAchievements(baseProfile)
-};
-
-export const DEFAULT_DEMO_SESSION = initialPlacementProfile;
-
+/**
+ * SessionProvider — manages live data fetched from the backend.
+ * No hardcoded scores, streaks, or metrics. All data is backend-derived.
+ */
 export const SessionProvider = ({ children }) => {
-  const [placementProfile, setPlacementProfile] = useState(() => {
-    try {
-      const saved = localStorage.getItem('placeai_placement_profile');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const merged = {
-          ...initialPlacementProfile,
-          ...parsed,
-          scores: { ...initialPlacementProfile.scores, ...(parsed.scores || {}) },
-          progress: { ...initialPlacementProfile.progress, ...(parsed.progress || {}) },
-          journey: { ...initialPlacementProfile.journey, ...(parsed.journey || {}) },
-          atsResult: parsed.atsResult && Object.keys(parsed.atsResult).length > 0 ? parsed.atsResult : null
-        };
-        merged.nextAction = calculateNextBestAction(merged);
-        merged.achievements = checkAchievements(merged);
-        return merged;
-      }
-    } catch (e) {
-      console.error("Failed loading placement profile from localStorage", e);
-    }
-    return initialPlacementProfile;
-  });
-
+  const [dashboardData, setDashboardData] = useState(null);  // from /dashboard/summary
+  const [loading, setLoading] = useState(false);
+  const [atsResult, setAtsResult] = useState(null);   // last ATS result in this browser session
   const [toasts, setToasts] = useState([]);
-
-  // Save to localStorage safely when placementProfile changes
-  useEffect(() => {
-    try {
-      localStorage.setItem('placeai_placement_profile', JSON.stringify(placementProfile));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [placementProfile]);
 
   const showToast = (message, type = 'success') => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
-    }, 4000);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
   };
 
-  const dispatchEvent = (eventType, payload = {}) => {
-    setPlacementProfile(prev => {
-      let updatedScores = { ...prev.scores };
-      let updatedProgress = { ...prev.progress };
-      let updatedJourney = { ...prev.journey };
-
-      if (eventType === EVENTS.RESUME_ANALYZED) {
-        if (payload.score) {
-          updatedScores.resume = payload.score;
-          updatedJourney.resume = payload.score;
-        }
-        updatedProgress.resumesAnalyzed = (updatedProgress.resumesAnalyzed || 0) + 1;
-        showToast('Resume ATS evaluation complete! Score: ' + updatedScores.resume + '/100 🎉');
-      } else if (eventType === EVENTS.TASK_COMPLETED) {
-        updatedProgress.tasksCompleted = (updatedProgress.tasksCompleted || 0) + 1;
-        if (payload.category === 'DSA') {
-          updatedProgress.dsaProblemsSolved = (updatedProgress.dsaProblemsSolved || 47) + 2;
-          showToast('2 DSA problems solved! Total solved: ' + updatedProgress.dsaProblemsSolved + ' 🧠');
-        } else {
-          showToast('Preparation task completed! +3% readiness 🎯');
-        }
-      } else if (eventType === EVENTS.INTERVIEW_COMPLETED) {
-        updatedScores.interview = Math.min(100, Math.max((updatedScores.interview || 71), payload.score || 78));
-        updatedProgress.interviewsCompleted = (updatedProgress.interviewsCompleted || 0) + 1;
-        updatedJourney.interviews = updatedScores.interview;
-        showToast('Mock Interview completed! Interview score: ' + updatedScores.interview + '% 🎤');
-      } else if (eventType === EVENTS.ONBOARDING_COMPLETED) {
-        showToast('Placement goal updated for ' + (payload.targetRole || 'Software Engineer') + ' 🚀');
-      }
-
-      const newReadiness = calculateReadiness(updatedScores, prev.consistency);
-      updatedScores.readiness = newReadiness;
-
-      const nextState = {
-        ...prev,
-        identity: { ...prev.identity, ...(payload.identity || {}) },
-        scores: updatedScores,
-        progress: updatedProgress,
-        journey: updatedJourney
-      };
-
-      nextState.nextAction = calculateNextBestAction(nextState);
-      nextState.achievements = checkAchievements(nextState);
-
-      return nextState;
-    });
-  };
-
-  const completeTask = (taskId) => {
-    setPlacementProfile(prev => {
-      const updatedPlan = prev.dailyPlan.map(t => {
-        if (t.id === taskId) {
-          return { ...t, completed: !t.completed };
-        }
-        return t;
-      });
-      const completedTask = updatedPlan.find(t => t.id === taskId);
-      if (completedTask && completedTask.completed) {
-        dispatchEvent(EVENTS.TASK_COMPLETED, { category: completedTask.category });
-      }
-      const nextState = {
-        ...prev,
-        dailyPlan: updatedPlan
-      };
-      nextState.nextAction = calculateNextBestAction(nextState);
-      nextState.achievements = checkAchievements(nextState);
-      return nextState;
-    });
-  };
-
-  const startNewAnalysis = async (file, jdText = '') => {
-    showToast('Evaluating resume with deterministic ATS engine...', 'info');
+  const refreshDashboard = async () => {
     try {
-      const res = await api.scoreResumeAts(file, jdText);
-      const atsData = {
-        ...res.data,
-        fileName: file?.name || 'Uploaded_Resume.pdf'
-      };
-
-      setPlacementProfile(prev => {
-        const updatedScores = {
-          ...prev.scores,
-          resume: atsData.resumeAtsScore,
-          jobMatch: atsData.jobMatchScore !== null && atsData.jobMatchScore !== undefined ? atsData.jobMatchScore : prev.scores.jobMatch
-        };
-        const updatedProgress = {
-          ...prev.progress,
-          resumesAnalyzed: (prev.progress.resumesAnalyzed || 0) + 1
-        };
-        const updatedJourney = {
-          ...prev.journey,
-          resume: atsData.resumeAtsScore
-        };
-        const newReadiness = calculateReadiness(updatedScores, prev.consistency);
-        updatedScores.readiness = newReadiness;
-
-        const nextState = {
-          ...prev,
-          atsResult: atsData,
-          scores: updatedScores,
-          progress: updatedProgress,
-          journey: updatedJourney
-        };
-        nextState.nextAction = calculateNextBestAction(nextState);
-        nextState.achievements = checkAchievements(nextState);
-        return nextState;
-      });
-
-      showToast(`Resume Evaluated! ATS Score: ${atsData.resumeAtsScore}/100 🎉`, 'success');
-      return atsData;
+      const res = await api.getDashboardSummary();
+      setDashboardData(res.data);
     } catch (err) {
-      console.error('Error analyzing resume with ATS engine:', err);
-      showToast('Failed to evaluate resume. Make sure backend API is running.', 'error');
-      throw err;
+      // 401 will be caught at the global level; other errors — swallow silently here
+      if (!err.message?.includes('log in')) {
+        console.error('Failed to refresh dashboard:', err.message);
+      }
     }
   };
 
-  const resetSession = () => {
-    localStorage.removeItem('placeai_placement_profile');
-    setPlacementProfile(initialPlacementProfile);
-    showToast('Placement session restored to default profile 🔄', 'info');
+  // Thin wrapper so pages can trigger an ATS upload and refresh dashboard afterwards
+  const startNewAnalysis = async (file, jdText = '') => {
+    setLoading(true);
+    showToast('Scoring resume with deterministic ATS engine…', 'info');
+    try {
+      const res = await api.scoreResumeAts(file, jdText);
+      const data = { ...res.data, fileName: file?.name || 'Resume.pdf' };
+      setAtsResult(data);
+      await refreshDashboard();
+      showToast(`ATS Score: ${data.resumeAtsScore}/100 ✅`, 'success');
+      return data;
+    } catch (err) {
+      showToast(err.message || 'Resume analysis failed. Please try again.', 'error');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
+
+  // Expose a placementProfile-shaped object that pages depend on (read-only, computed)
+  const placementProfile = dashboardData
+    ? {
+        identity: { name: '', targetRole: '', targetCompanies: [], preparationLevel: '' },
+        scores: {
+          readiness: dashboardData.readiness_score,
+          resume: dashboardData.latest_ats_score || null,
+          interview: null,
+          jobMatch: dashboardData.latest_match_percentage || null,
+          skills: dashboardData.skills_extracted?.length || 0,
+        },
+        progress: {
+          resumesAnalyzed: dashboardData.total_resumes,
+          dsaProblemsSolved: 0,
+          interviewsCompleted: 0,
+          tasksCompleted: 0,
+        },
+        nextAction: {
+          title: dashboardData.priority_action_title,
+          reason: dashboardData.priority_action_reason,
+          module: dashboardData.priority_action_module,
+        },
+        atsResult,
+      }
+    : null;
 
   return (
     <SessionContext.Provider value={{
       session: placementProfile,
       placementProfile,
-      updateProfile: setPlacementProfile,
-      dispatchEvent,
-      completeTask,
+      dashboardData,
+      loading,
+      atsResult,
       startNewAnalysis,
-      resetSession,
-      showToast
+      refreshDashboard,
+      showToast,
     }}>
       {children}
 
-      {/* TOAST CONTAINER */}
+      {/* Toast container */}
       <div style={{
-        position: 'fixed',
-        bottom: '24px',
-        right: '24px',
-        zIndex: 9999,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.75rem',
-        pointerEvents: 'none'
+        position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999,
+        display: 'flex', flexDirection: 'column', gap: '0.75rem', pointerEvents: 'none'
       }}>
         {toasts.map(t => (
-          <div
-            key={t.id}
-            style={{
-              background: t.type === 'info' ? 'linear-gradient(135deg, #1e293b, #0f172a)' : 'linear-gradient(135deg, #161925, #0f1117)',
-              border: `1px solid ${t.type === 'info' ? '#3b82f6' : '#10b981'}`,
-              color: '#ffffff',
-              padding: '0.9rem 1.4rem',
-              borderRadius: '16px',
-              fontSize: '0.9rem',
-              fontWeight: '800',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-              pointerEvents: 'auto',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem'
-            }}
-          >
-            <span>{t.type === 'info' ? 'ℹ️' : '✅'}</span>
+          <div key={t.id} style={{
+            background: t.type === 'error'
+              ? 'linear-gradient(135deg, #450a0a, #0f1117)'
+              : t.type === 'info'
+                ? 'linear-gradient(135deg, #1e293b, #0f172a)'
+                : 'linear-gradient(135deg, #052e16, #0f1117)',
+            border: `1px solid ${t.type === 'error' ? '#ef4444' : t.type === 'info' ? '#3b82f6' : '#10b981'}`,
+            color: '#ffffff', padding: '0.9rem 1.4rem', borderRadius: '16px',
+            fontSize: '0.9rem', fontWeight: '700',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.5)', pointerEvents: 'auto',
+            display: 'flex', alignItems: 'center', gap: '0.75rem',
+            maxWidth: '380px'
+          }}>
+            <span>{t.type === 'error' ? '⚠️' : t.type === 'info' ? 'ℹ️' : '✅'}</span>
             <span>{t.message}</span>
           </div>
         ))}
@@ -276,3 +118,6 @@ export const SessionProvider = ({ children }) => {
 };
 
 export const useSession = () => useContext(SessionContext);
+
+// Backward-compat export — pages that imported DEFAULT_DEMO_SESSION get null now
+export const DEFAULT_DEMO_SESSION = null;

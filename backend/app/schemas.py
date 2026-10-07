@@ -14,8 +14,9 @@ class TokenData(BaseModel):
 # User Schemas
 class UserCreate(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=8, description="Password must be at least 8 characters")
     full_name: Optional[str] = None
+    target_company_tier: Optional[str] = "Tier 2"
     is_admin: Optional[bool] = False
 
 class UserLogin(BaseModel):
@@ -33,6 +34,9 @@ class UserOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+# Alias for auth router
+UserResponse = UserOut
 
 class UpdateUserTierRequest(BaseModel):
     target_company_tier: str
