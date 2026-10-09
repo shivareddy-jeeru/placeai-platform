@@ -1,24 +1,41 @@
-import React from 'react';
+import React, { useState } from 'react';
 import InterviewRoom from '../components/InterviewRoom';
 
 export default function InterviewCoach() {
+  const [selectedType, setSelectedType] = useState('project');
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '1100px', margin: '0 auto', paddingBottom: '5rem' }}>
-      {/* HEADER */}
-      <div>
-        <span style={{ fontSize: '0.75rem', color: '#ec4899', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          INTERVIEW SIMULATION ENGINE
-        </span>
-        <h1 style={{ fontSize: '2.2rem', fontWeight: '900', color: '#ffffff', margin: '0.3rem 0 0.4rem 0' }}>
-          AI Mock Interview Coach 🎤
-        </h1>
-        <p style={{ fontSize: '0.92rem', color: '#94a3b8', margin: 0 }}>
-          Practice real-time STAR technical & behavioral scenario questions with instant 4-metric rubric scoring.
-        </p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem', maxWidth: '1380px', margin: '0 auto', paddingBottom: '6rem' }}>
+      
+      {/* ─── HERO HEADER ─────────────────────────────────────────────── */}
+      <div className="saas-hero-card" style={{ padding: '2.8rem 2.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.5rem' }}>
+          <div style={{ maxWidth: '780px' }}>
+            <span className="saas-pill" style={{ marginBottom: '1rem', background: 'rgba(236, 72, 153, 0.15)', color: '#f472b6', borderColor: 'rgba(236, 72, 153, 0.3)' }}>
+              AI INTERVIEW COACH & SIMULATOR
+            </span>
+            <h1 className="hero-giant-title" style={{ margin: '0.4rem 0 0.8rem 0' }}>
+              Your next interview starts here.
+            </h1>
+            <p className="hero-lead-text" style={{ margin: 0 }}>
+              Practice realistic Technical, Behavioral STAR, and Project architecture interviews with real-time scoring across communication, technical precision, confidence, and filler word detection.
+            </p>
+          </div>
+
+          <div style={{ background: 'var(--bg-surface)', padding: '1rem 1.6rem', borderRadius: '18px', border: '1px solid var(--border-default)', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Mock Status</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#ec4899' }}>10 Completed</div>
+            <div style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 700 }}>Avg Score: 79/100</div>
+          </div>
+        </div>
       </div>
 
-      {/* EMBEDDED INTERVIEW ROOM SIMULATOR */}
-      <InterviewRoom />
+      {/* ─── EMBEDDED INTERVIEW ROOM ──────────────────────────────────── */}
+      <InterviewRoom
+        interviewType={selectedType}
+        onTypeChange={(type) => setSelectedType(type)}
+      />
+
     </div>
   );
 }

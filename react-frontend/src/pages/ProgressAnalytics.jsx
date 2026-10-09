@@ -9,7 +9,7 @@ const ProgressAnalytics = () => {
   const graphHistory = history.length > 0 
     ? [...history].reverse()
     : session 
-      ? [{ date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }), atsScore: session.atsScore || 0 }]
+      ? [{ date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }), atsScore: session?.atsScore || 0 }]
       : [];
 
   // Dimensions

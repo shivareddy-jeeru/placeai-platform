@@ -32,24 +32,55 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => localStorage.getItem('placeai_token'));
   const [loading, setLoading] = useState(true); // true while verifying existing token
 
-  // On mount — verify the saved token is still valid
+  // On mount — verify the saved token is still valid, or create a guest session
   useEffect(() => {
-    const verify = async () => {
-      const saved = localStorage.getItem('placeai_token');
-      if (!saved) { setLoading(false); return; }
-      try {
-        const me = await apiGet('/auth/me', saved);
-        setUser(me);
-        setToken(saved);
-      } catch {
-        localStorage.removeItem('placeai_token');
-        setToken(null);
-        setUser(null);
-      } finally {
-        setLoading(false);
+    const verifyOrCreate = async () => {
+      let saved = localStorage.getItem('placeai_token');
+      let isValid = false;
+      
+      if (saved) {
+        try {
+          const me = await apiGet('/auth/me', saved);
+          setUser(me);
+          setToken(saved);
+          isValid = true;
+        } catch (err) {
+          console.warn("Existing token invalid. Creating new guest session...");
+          localStorage.removeItem('placeai_token');
+          saved = null;
+        }
       }
+      
+      if (!isValid) {
+        try {
+          // Create anonymous user with guaranteed valid email and password length
+          const randomId = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
+          const email = `guest_${randomId}@example.com`;
+          const password = randomId + "Password123!";
+          
+          await apiPost('/auth/register', { email, password, full_name: 'Guest' });
+          
+          const body = new URLSearchParams({ username: email, password });
+          const res = await fetch(`${API_BASE}/auth/token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body,
+          });
+          const data = await res.json();
+          saved = data.access_token;
+          localStorage.setItem('placeai_token', saved);
+          setToken(saved);
+          
+          const me = await apiGet('/auth/me', saved);
+          setUser(me);
+        } catch (err) {
+          console.error("Failed to create guest session:", err);
+        }
+      }
+      
+      setLoading(false);
     };
-    verify();
+    verifyOrCreate();
   }, []);
 
   const login = async (email, password) => {

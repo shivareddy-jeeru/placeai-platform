@@ -1,29 +1,56 @@
 import React, { useState } from 'react';
-import usePlacementProfile from '../hooks/usePlacementProfile';
-import { EVENTS } from '../utils/eventEmitter';
+import { useSession } from '../context/SessionContext';
 import { useNavigate } from 'react-router-dom';
 
 export default function OnboardingModal({ isOpen, onClose }) {
-  const { placementProfile, dispatchEvent } = usePlacementProfile();
+  const { session, updateStudentProfile, startNewAnalysis } = useSession();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
-  const [role, setRole] = useState(placementProfile?.identity?.targetRole || 'Software Engineer');
-  const [company, setCompany] = useState(placementProfile?.identity?.targetCompanies?.[0] || 'Amazon');
-  const [level, setLevel] = useState(placementProfile?.identity?.preparationLevel || 'Intermediate');
+  const [studentName, setStudentName] = useState(session?.identity?.name || 'Shiva');
+  const [role, setRole] = useState(session?.identity?.targetRole || 'Software Engineer');
+  const [journeyLevel, setJourneyLevel] = useState(session?.identity?.preparationLevel || 'Intermediate');
+  const [selectedCompanies, setSelectedCompanies] = useState(session?.identity?.targetCompanies || ['Amazon', 'TCS', 'Infosys', 'Google']);
 
   if (!isOpen) return null;
 
+  const roles = [
+    'Software Engineer',
+    'Full Stack Developer',
+    'AI/ML Engineer',
+    'Data Analyst',
+    'ServiceNow Developer'
+  ];
+
+  const levels = [
+    { id: 'Beginner', title: 'Beginner', desc: 'Starting DSA & fundamental coding' },
+    { id: 'Intermediate', title: 'Intermediate', desc: 'Solved 30+ problems, building projects' },
+    { id: 'Interview Ready', title: 'Interview Ready', desc: 'Prepping for active campus drives' },
+  ];
+
+  const availableCompanies = [
+    'Amazon', 'TCS', 'Infosys', 'Accenture', 'Capgemini', 'LTIMindtree', 'Google', 'Microsoft', 'Deloitte', 'Wipro'
+  ];
+
+  const toggleCompany = (c) => {
+    if (selectedCompanies.includes(c)) {
+      setSelectedCompanies(selectedCompanies.filter(x => x !== c));
+    } else {
+      setSelectedCompanies([...selectedCompanies, c]);
+    }
+  };
+
   const handleFinish = () => {
-    dispatchEvent(EVENTS.ONBOARDING_COMPLETED, {
+    updateStudentProfile?.({
       identity: {
+        name: studentName,
         targetRole: role,
-        targetCompanies: [company, 'TCS'],
-        preparationLevel: level
-      }
+        preparationLevel: journeyLevel,
+        targetCompanies: selectedCompanies,
+      },
     });
     onClose();
-    navigate('/todays-plan');
+    navigate('/dashboard');
   };
 
   return (
@@ -34,154 +61,283 @@ export default function OnboardingModal({ isOpen, onClose }) {
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'rgba(11, 13, 20, 0.8)',
-        backdropFilter: 'blur(8px)',
+        background: 'rgba(7, 8, 14, 0.85)',
+        backdropFilter: 'blur(10px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 9999,
-        padding: '1.5rem'
+        zIndex: 99999,
+        padding: '1.5rem',
       }}
     >
       <div
         style={{
-          background: '#161925',
-          border: '1px solid #6366f1',
+          background: 'var(--bg-elevated)',
+          border: '1.5px solid var(--indigo)',
           borderRadius: '28px',
           width: '100%',
-          maxWidth: '520px',
-          padding: '2.25rem',
-          boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
+          maxWidth: '540px',
+          padding: '2.5rem',
+          boxShadow: '0 25px 70px rgba(0,0,0,0.6)',
           display: 'flex',
           flexDirection: 'column',
-          gap: '1.5rem'
+          gap: '1.5rem',
+          maxHeight: '90vh',
+          overflowY: 'auto',
         }}
       >
+        {/* Top Stepper Indicator */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.72rem', color: '#818cf8', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            PERSONALIZED PLACEMENT GOAL • STEP {step} OF 3
-          </span>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <span className="badge badge-indigo">STEP {step} OF 4</span>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
+              {step === 1 ? 'Target Role' : step === 2 ? 'Journey Stage' : step === 3 ? 'Target Companies' : 'Sync Profile'}
+            </span>
+          </div>
+          <button
+            onClick={onClose}
+            style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem' }}
+          >
             ✕
           </button>
         </div>
 
+        {/* ─── STEP 1: WHAT ROLE ARE YOU TARGETING? ──────────────────── */}
         {step === 1 && (
-          <div>
-            <h3 style={{ fontSize: '1.4rem', fontWeight: '900', color: '#ffffff', margin: '0 0 0.4rem 0' }}>
-              Select Your Target Role 🎯
-            </h3>
-            <p style={{ fontSize: '0.88rem', color: '#94a3b8', margin: '0 0 1.25rem 0' }}>
-              We tune your skill gap thresholds and roadmap based on industry benchmarks.
-            </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-primary)', margin: '0 0 0.35rem 0' }}>
+                What role are you targeting?
+              </h3>
+              <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0 }}>
+                We configure your skill gaps, job matches, and questions for this specific profile.
+              </p>
+            </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              {['Software Engineer', 'Full Stack Developer', 'Data Scientist', 'ML Engineer', 'DevOps Engineer'].map(r => (
+              <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 700 }}>Student Name:</label>
+              <input
+                type="text"
+                value={studentName}
+                onChange={(e) => setStudentName(e.target.value)}
+                placeholder="Your Name (e.g. Shiva)"
+                style={{
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-default)',
+                  borderRadius: '12px',
+                  padding: '0.75rem 1rem',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.9rem',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {roles.map(r => (
                 <button
                   key={r}
                   onClick={() => setRole(r)}
                   style={{
-                    background: role === r ? 'rgba(99, 102, 241, 0.2)' : '#0f1117',
-                    border: `1px solid ${role === r ? '#6366f1' : '#2d3342'}`,
-                    color: '#ffffff',
-                    borderRadius: '12px',
+                    background: role === r ? 'rgba(99, 102, 241, 0.18)' : 'var(--bg-surface)',
+                    border: `1.5px solid ${role === r ? 'var(--indigo)' : 'var(--border-default)'}`,
+                    color: 'var(--text-primary)',
+                    borderRadius: '14px',
                     padding: '0.85rem 1.2rem',
                     fontSize: '0.9rem',
-                    fontWeight: '800',
+                    fontWeight: 800,
                     textAlign: 'left',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
                   }}
                 >
-                  {r}
+                  <span>{r}</span>
+                  <span>{role === r ? '●' : '○'}</span>
                 </button>
               ))}
             </div>
+
+            <button
+              onClick={() => setStep(2)}
+              className="btn btn-primary"
+              style={{ borderRadius: '14px', padding: '0.85rem' }}
+            >
+              Next: Journey Stage →
+            </button>
           </div>
         )}
 
+        {/* ─── STEP 2: WHERE ARE YOU IN YOUR JOURNEY? ─────────────────── */}
         {step === 2 && (
-          <div>
-            <h3 style={{ fontSize: '1.4rem', fontWeight: '900', color: '#ffffff', margin: '0 0 0.4rem 0' }}>
-              Select Primary Target Company 🏢
-            </h3>
-            <p style={{ fontSize: '0.88rem', color: '#94a3b8', margin: '0 0 1.25rem 0' }}>
-              Generates company-specific PYQ coding questions and interview rubrics.
-            </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-primary)', margin: '0 0 0.35rem 0' }}>
+                Where are you in your journey?
+              </h3>
+              <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0 }}>
+                This tunes your initial DSA target problem count and readiness thresholds.
+              </p>
+            </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              {['Amazon', 'TCS Digital', 'Accenture', 'Microsoft', 'Google'].map(c => (
+              {levels.map(l => (
                 <button
-                  key={c}
-                  onClick={() => setCompany(c)}
+                  key={l.id}
+                  onClick={() => setJourneyLevel(l.id)}
                   style={{
-                    background: company === c ? 'rgba(99, 102, 241, 0.2)' : '#0f1117',
-                    border: `1px solid ${company === c ? '#6366f1' : '#2d3342'}`,
-                    color: '#ffffff',
-                    borderRadius: '12px',
-                    padding: '0.85rem 1.2rem',
-                    fontSize: '0.9rem',
-                    fontWeight: '800',
+                    background: journeyLevel === l.id ? 'rgba(99, 102, 241, 0.18)' : 'var(--bg-surface)',
+                    border: `1.5px solid ${journeyLevel === l.id ? 'var(--indigo)' : 'var(--border-default)'}`,
+                    color: 'var(--text-primary)',
+                    borderRadius: '14px',
+                    padding: '1rem 1.2rem',
                     textAlign: 'left',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.2rem',
                   }}
                 >
-                  {c}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.95rem', fontWeight: 800 }}>{l.title}</span>
+                    <span style={{ color: journeyLevel === l.id ? 'var(--indigo-light)' : 'var(--text-muted)' }}>
+                      {journeyLevel === l.id ? '●' : '○'}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{l.desc}</span>
                 </button>
               ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={() => setStep(1)}
+                className="btn btn-secondary"
+                style={{ borderRadius: '14px', padding: '0.85rem 1.2rem' }}
+              >
+                Back
+              </button>
+              <button
+                onClick={() => setStep(3)}
+                className="btn btn-primary"
+                style={{ flex: 1, borderRadius: '14px', padding: '0.85rem' }}
+              >
+                Next: Target Companies →
+              </button>
             </div>
           </div>
         )}
 
+        {/* ─── STEP 3: WHICH COMPANIES INTEREST YOU? ─────────────────── */}
         {step === 3 && (
-          <div>
-            <h3 style={{ fontSize: '1.4rem', fontWeight: '900', color: '#ffffff', margin: '0 0 0.4rem 0' }}>
-              Current Preparation Baseline 📈
-            </h3>
-            <p style={{ fontSize: '0.88rem', color: '#94a3b8', margin: '0 0 1.25rem 0' }}>
-              Helps calibrate daily task durations and preparation intensity.
-            </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-primary)', margin: '0 0 0.35rem 0' }}>
+                Which companies interest you?
+              </h3>
+              <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0 }}>
+                Select your dream campus recruiters to track in the Company Hub.
+              </p>
+            </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              {['Beginner (Starting fresh)', 'Intermediate (Know basics & DSA)', 'Advanced (Actively interviewing)'].map(l => (
-                <button
-                  key={l}
-                  onClick={() => setLevel(l)}
-                  style={{
-                    background: level === l ? 'rgba(99, 102, 241, 0.2)' : '#0f1117',
-                    border: `1px solid ${level === l ? '#6366f1' : '#2d3342'}`,
-                    color: '#ffffff',
-                    borderRadius: '12px',
-                    padding: '0.85rem 1.2rem',
-                    fontSize: '0.9rem',
-                    fontWeight: '800',
-                    textAlign: 'left',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {l}
-                </button>
-              ))}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              {availableCompanies.map(c => {
+                const isSelected = selectedCompanies.includes(c);
+                return (
+                  <button
+                    key={c}
+                    onClick={() => toggleCompany(c)}
+                    style={{
+                      background: isSelected ? 'var(--indigo)' : 'var(--bg-surface)',
+                      color: isSelected ? '#ffffff' : 'var(--text-secondary)',
+                      border: `1.5px solid ${isSelected ? 'var(--indigo)' : 'var(--border-default)'}`,
+                      borderRadius: '12px',
+                      padding: '0.6rem 1rem',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {isSelected ? '✓ ' : '+ '} {c}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={() => setStep(2)}
+                className="btn btn-secondary"
+                style={{ borderRadius: '14px', padding: '0.85rem 1.2rem' }}
+              >
+                Back
+              </button>
+              <button
+                onClick={() => setStep(4)}
+                className="btn btn-primary"
+                style={{ flex: 1, borderRadius: '14px', padding: '0.85rem' }}
+              >
+                Next: Resume Setup →
+              </button>
             </div>
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem' }}>
-          {step > 1 ? (
-            <button onClick={() => setStep(step - 1)} style={{ background: '#1e2438', border: '1px solid #2d3342', color: '#ffffff', borderRadius: '12px', padding: '0.7rem 1.4rem', fontSize: '0.85rem', fontWeight: '800', cursor: 'pointer' }}>
-              ← Back
-            </button>
-          ) : <div />}
+        {/* ─── STEP 4: UPLOAD RESUME & INITIALIZE ──────────────────────── */}
+        {step === 4 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-primary)', margin: '0 0 0.35rem 0' }}>
+                Upload resume & initialize.
+              </h3>
+              <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0 }}>
+                Then PlaceAI automatically constructs your personal Placement Command Center!
+              </p>
+            </div>
 
-          {step < 3 ? (
-            <button onClick={() => setStep(step + 1)} style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#ffffff', border: 'none', borderRadius: '12px', padding: '0.7rem 1.6rem', fontSize: '0.85rem', fontWeight: '900', cursor: 'pointer' }}>
-              Next Step →
-            </button>
-          ) : (
-            <button onClick={handleFinish} style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#ffffff', border: 'none', borderRadius: '12px', padding: '0.7rem 1.8rem', fontSize: '0.85rem', fontWeight: '900', cursor: 'pointer' }}>
-              Generate Placement Plan 🚀
-            </button>
-          )}
-        </div>
+            <div style={{
+              background: 'var(--bg-surface)',
+              border: '2px dashed var(--indigo)',
+              borderRadius: '20px',
+              padding: '2rem',
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '0.75rem',
+            }}>
+              <div style={{ fontSize: '2.5rem' }}>📄</div>
+              <div>
+                <strong style={{ color: 'var(--text-primary)', fontSize: '1rem', display: 'block' }}>
+                  Active Profile: {studentName}'s Resume
+                </strong>
+                <span style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: 700 }}>
+                  Ready to analyze with 84/100 ATS baseline
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={() => setStep(3)}
+                className="btn btn-secondary"
+                style={{ borderRadius: '14px', padding: '0.85rem 1.2rem' }}
+              >
+                Back
+              </button>
+              <button
+                onClick={handleFinish}
+                className="btn btn-primary"
+                style={{ flex: 1, borderRadius: '14px', padding: '0.85rem', fontWeight: 800 }}
+              >
+                Launch PlaceAI Command Center 🚀
+              </button>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

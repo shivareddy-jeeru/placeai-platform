@@ -1,395 +1,502 @@
-import React, { useState, useRef } from 'react';
-import { useSession, DEFAULT_DEMO_SESSION } from '../context/SessionContext';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AnalysisView from './AnalysisView';
+import { useSession } from '../context/SessionContext';
 
-/* ─── Mini Sparkline SVG ────────────────────────────────────── */
-const Sparkline = ({ color = '#6366f1', up = true }) => {
-  const pts = up
-    ? '0,20 10,12 20,15 30,8 40,11 50,4 60,6 70,2'
-    : '0,5 10,12 20,8 30,15 40,11 50,18 60,14 70,20';
+// ─── Animated Circular Readiness Ring ─────────────────────────────────────────
+const ReadinessRing = ({ score = 72 }) => {
+  const r = 58;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (score / 100) * circ;
+  const color = score >= 75 ? '#10b981' : score >= 50 ? '#6366f1' : '#f59e0b';
+
   return (
-    <svg width="70" height="22" viewBox="0 0 70 22" style={{ display: 'block' }}>
-      <polyline points={pts} stroke={color} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <div style={{ position: 'relative', width: 150, height: 150, margin: '0 auto' }}>
+      <svg width="150" height="150" viewBox="0 0 150 150">
+        <circle cx="75" cy="75" r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="12" />
+        <circle
+          cx="75" cy="75" r={r} fill="none"
+          stroke={color} strokeWidth="12"
+          strokeDasharray={circ}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          transform="rotate(-90 75 75)"
+          style={{
+            transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            filter: `drop-shadow(0 0 10px ${color})`,
+          }}
+        />
+      </svg>
+      <div style={{
+        position: 'absolute', inset: 0,
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', gap: 2
+      }}>
+        <span style={{ fontSize: '2.4rem', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.04em', lineHeight: 1 }}>
+          {score}
+        </span>
+        <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          / 100
+        </span>
+      </div>
+    </div>
   );
 };
 
+// ─── Time-of-day greeting ─────────────────────────────────────────────────────
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
 export default function Dashboard() {
-  const { profile, session, activeJobs, startNewAnalysis, resetSession } = useSession();
-
-  const handleResetSession = () => {
-    if (window.confirm("Are you sure you want to reset your placement session metrics back to default profile?")) {
-      resetSession();
-    }
-  };
   const navigate = useNavigate();
-  const fileInputRef = useRef(null);
-  const [isDraggingOver, setIsDraggingOver] = useState(false);
-  const [showAnalysisHub, setShowAnalysisHub] = useState(false);
+  const { session, updateStudentProfile } = useSession();
 
-  const activeData = session || DEFAULT_DEMO_SESSION;
+  const studentName = session?.identity?.name || 'Shiva';
+  const targetRole = session?.identity?.targetRole || 'Software Engineer';
+  const readiness = session?.scores?.readiness ?? 72;
+  const resumeScore = session?.scores?.resume ?? 84;
+  const interviewScore = session?.scores?.interview ?? 71;
+  const skillsScore = session?.scores?.skills ?? 68;
+  const jobMatchScore = session?.scores?.jobMatch ?? 82;
+  const dsaScore = session?.scores?.dsa ?? 47;
+  const monthlyChange = session?.scores?.monthlyChange ?? '+8%';
 
-  const runningJob = Object.values(session?.activeJobs || {})[0];
-  if (runningJob) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', flexDirection: 'column', gap: '1.25rem', background: '#0f1117', width: '100%', padding: '2rem', color: '#ffffff' }}>
-        <div className="spinner" style={{ borderTopColor: '#6366f1', width: '3.5rem', height: '3.5rem' }} />
-        <h3 style={{ color: '#ffffff', fontWeight: 800, fontSize: '1.4rem' }}>AI is analyzing your resume…</h3>
-        <div style={{ width: '360px', height: '8px', background: '#1e2438', borderRadius: '4px', overflow: 'hidden' }}>
-          <div style={{ width: `${runningJob.progress}%`, height: '100%', background: 'linear-gradient(90deg,#6366f1,#8b5cf6)', borderRadius: '4px', transition: 'width 0.4s ease' }} />
-        </div>
-        <span style={{ color: '#94a3b8', fontSize: '0.88rem', fontWeight: 700 }}>{runningJob.progress}% Complete • Extracting Skills & Computing ATS Score</span>
-      </div>
-    );
-  }
-
-  // If user clicked View Analysis Hub or if a newly uploaded session is ready, show AnalysisView
-  if (showAnalysisHub) {
-    return <AnalysisView />;
-  }
-
-  const triggerUpload = () => fileInputRef.current?.click();
-
-  const handleFileChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      try {
-        await startNewAnalysis(file, '');
-        setShowAnalysisHub(true);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDraggingOver(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setIsDraggingOver(false);
-  };
-
-  const handleDrop = async (e) => {
-    e.preventDefault();
-    setIsDraggingOver(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      try {
-        await startNewAnalysis(file, '');
-        setShowAnalysisHub(true);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
+  const [activeTab, setActiveTab] = useState('overview');
 
   return (
-    <div className="dashboard-container" style={{ display: 'flex', flexDirection: 'column', gap: '2rem', width: '100%', maxWidth: '1420px', margin: '0 auto', paddingBottom: '3rem' }}>
-      <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileChange} accept=".pdf,.docx,.txt" />
-
-      {/* ─── 1. GREETING HEADER ────────────────────────────────────── */}
-      <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem', maxWidth: '1380px', margin: '0 auto', paddingBottom: '5rem' }}>
+      
+      {/* ─── HERO HEADER: "Good evening, Shiva 👋" ──────────────────────── */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        flexWrap: 'wrap',
+        gap: '1.5rem',
+      }}>
         <div>
-          <h1 style={{ fontSize: '2rem', fontWeight: '900', color: '#ffffff', margin: '0 0 0.3rem 0', letterSpacing: '-0.02em' }}>
-            👋 Welcome back, {profile?.name || 'Shiva'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
+            <span className="saas-pill">⚡ AI PLACEMENT OPERATING SYSTEM</span>
+            <span className="badge badge-green">Target: {targetRole}</span>
+          </div>
+          <h1 className="hero-giant-title" style={{ margin: 0 }}>
+            {getGreeting()}, <span className="gradient-text">{studentName}</span> 👋
           </h1>
-          <p style={{ fontSize: '0.92rem', color: '#94a3b8', margin: 0, fontWeight: '500' }}>
-            Track your placement readiness, evaluate resumes, and benchmark missing skills.
+          <p className="hero-lead-text" style={{ margin: '0.5rem 0 0 0', fontWeight: 500 }}>
+            You're <strong style={{ color: 'var(--indigo-light)' }}>{readiness}% placement ready</strong>. Focus on DSA fundamentals today to break into top product companies.
           </p>
         </div>
 
-        <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
+        {/* Quick Action Buttons */}
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
           <button
-            onClick={handleResetSession}
-            style={{
-              background: 'rgba(239, 68, 68, 0.12)',
-              border: '1px solid rgba(239, 68, 68, 0.35)',
-              color: '#ef4444',
-              borderRadius: '12px',
-              padding: '0.7rem 1.1rem',
-              fontSize: '0.88rem',
-              fontWeight: '800',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem'
-            }}
+            className="btn btn-secondary"
+            onClick={() => navigate('/resume')}
+            style={{ borderRadius: '14px', padding: '0.75rem 1.4rem' }}
           >
-            🔄 Reset Session
+            📄 Resume AI ({resumeScore}/100)
           </button>
-
           <button
-            onClick={() => setShowAnalysisHub(true)}
-            style={{
-              background: '#161925',
-              border: '1px solid #2d3342',
-              color: '#ffffff',
-              borderRadius: '12px',
-              padding: '0.7rem 1.4rem',
-              fontSize: '0.88rem',
-              fontWeight: '800',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-            }}
+            className="btn btn-primary"
+            onClick={() => navigate('/mentor')}
+            style={{ borderRadius: '14px', padding: '0.75rem 1.4rem' }}
           >
-            📊 View Full Analysis Hub
-          </button>
-
-          <button
-            onClick={triggerUpload}
-            style={{
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '12px',
-              padding: '0.7rem 1.5rem',
-              fontSize: '0.88rem',
-              fontWeight: '800',
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(99,102,241,0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.45rem'
-            }}
-          >
-            ☁️ Upload Resume
+            ✦ Ask AI Mentor
           </button>
         </div>
       </div>
 
-      {/* ─── 2. TOP KPI METRIC CARDS ─────────────────────────────────── */}
-      <div className="dashboard-kpi-grid">
-        {/* Card 1: Target Role */}
-        <div className="metric-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(99,102,241,0.15)', color: '#818cf8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>💼</div>
-            <span className="metric-title">TARGET ROLE</span>
-          </div>
+      {/* ─── PRIMARY COMMAND GRID: READINESS HERO + TODAY'S PRIORITY ───── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(340px, 1.1fr) minmax(340px, 1.4fr)',
+        gap: '1.5rem',
+      }}>
+        
+        {/* CARD 1: PLACEMENT READINESS SCORECARD */}
+        <div className="saas-hero-card" style={{ padding: '2.2rem 2rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
-            <strong style={{ fontSize: '1.05rem', color: '#ffffff', display: 'block' }}>{profile?.preferredRole || 'Software Engineer'}</strong>
-            <span style={{ fontSize: '0.72rem', color: '#6366f1', fontWeight: '800', cursor: 'pointer' }}>Full Stack Dev ➔</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-secondary)' }}>
+                PLACEMENT READINESS
+              </span>
+              <span className="badge badge-green" style={{ fontSize: '0.75rem', padding: '0.25rem 0.65rem' }}>
+                ↑ {monthlyChange} this month
+              </span>
+            </div>
+
+            {/* Centered Ring */}
+            <div style={{ padding: '0.5rem 0 1.25rem' }}>
+              <ReadinessRing score={readiness} />
+              <div style={{ textAlign: 'center', marginTop: '0.75rem' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  Overall benchmark across 4 hiring dimensions
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 4 Pillars Underneath: Resume (84), Interview (71), Skills (68), Jobs (82) */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '0.75rem',
+            borderTop: '1px solid var(--border-default)',
+            paddingTop: '1.25rem',
+            marginTop: '0.75rem',
+            textAlign: 'center',
+          }}>
+            <div
+              onClick={() => navigate('/resume')}
+              style={{ cursor: 'pointer', padding: '0.5rem', borderRadius: '12px', background: 'var(--bg-hover)', transition: 'transform 0.2s' }}
+            >
+              <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Resume</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--indigo-light)' }}>{resumeScore}</div>
+              <div style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 700 }}>ATS Ready</div>
+            </div>
+
+            <div
+              onClick={() => navigate('/interview')}
+              style={{ cursor: 'pointer', padding: '0.5rem', borderRadius: '12px', background: 'var(--bg-hover)', transition: 'transform 0.2s' }}
+            >
+              <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Interview</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#f472b6' }}>{interviewScore}</div>
+              <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 700 }}>10 Mock Rds</div>
+            </div>
+
+            <div
+              onClick={() => navigate('/skill-map')}
+              style={{ cursor: 'pointer', padding: '0.5rem', borderRadius: '12px', background: 'var(--bg-hover)', transition: 'transform 0.2s' }}
+            >
+              <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Skills</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#f59e0b' }}>{skillsScore}%</div>
+              <div style={{ fontSize: '0.65rem', color: '#f59e0b', fontWeight: 700 }}>6 Assessed</div>
+            </div>
+
+            <div
+              onClick={() => navigate('/job-matcher')}
+              style={{ cursor: 'pointer', padding: '0.5rem', borderRadius: '12px', background: 'var(--bg-hover)', transition: 'transform 0.2s' }}
+            >
+              <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Jobs</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#10b981' }}>{jobMatchScore}%</div>
+              <div style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 700 }}>Amazon Match</div>
+            </div>
           </div>
         </div>
 
-        {/* Card 2: Resumes Analyzed */}
-        <div className="metric-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(168,85,247,0.15)', color: '#c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>📄</div>
-              <span className="metric-title">RESUMES ANALYZED</span>
+        {/* CARD 2: TODAY'S FOCUS & PRIORITY */}
+        <div style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-accent)',
+          borderRadius: 'var(--radius-xl)',
+          padding: '2.2rem 2rem',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          position: 'relative',
+          overflow: 'hidden',
+          boxShadow: 'var(--shadow-md)',
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+              <span className="badge badge-amber" style={{ fontSize: '0.72rem', fontWeight: 900, padding: '0.3rem 0.8rem' }}>
+                🎯 TODAY'S PRIORITY
+              </span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>High Impact Action</span>
             </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: '0.5rem' }}>
-            <div>
-              <span className="metric-value">{activeData.progress?.resumesAnalyzed || 0}</span>
-              <span style={{ fontSize: '0.68rem', color: activeData.progress?.resumesAnalyzed ? '#10b981' : '#94a3b8', marginLeft: '0.5rem', fontWeight: '700' }}>
-                {activeData.progress?.resumesAnalyzed ? '↑ Active' : 'None Uploaded'}
-              </span>
-            </div>
-            <Sparkline color="#c084fc" />
-          </div>
-        </div>
 
-        {/* Card 3: Skills Extracted */}
-        <div className="metric-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(236,72,153,0.15)', color: '#f472b6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>🧠</div>
-            <span className="metric-title">SKILLS EXTRACTED</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: '0.5rem' }}>
-            <div>
-              <span className="metric-value">
-                {activeData.atsResult?.detectedSkills?.length !== undefined ? activeData.atsResult.detectedSkills.length : '--'}
-              </span>
-              <span style={{ fontSize: '0.68rem', color: '#10b981', marginLeft: '0.5rem', fontWeight: '700' }}>
-                {activeData.atsResult?.detectedSkills ? '↑ Parsed' : 'Awaiting Resume'}
-              </span>
-            </div>
-            <Sparkline color="#f472b6" />
-          </div>
-        </div>
+            <h2 style={{ fontSize: '1.85rem', fontWeight: 900, color: 'var(--text-primary)', margin: '0 0 0.6rem 0', letterSpacing: '-0.02em' }}>
+              Improve your DSA fundamentals
+            </h2>
 
-        {/* Card 4: Job Matches */}
-        <div className="metric-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(16,185,129,0.15)', color: '#34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>🎯</div>
-            <span className="metric-title">JOB MATCHES</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: '0.5rem' }}>
-            <div>
-              <span className="metric-value">
-                {activeData.atsResult?.jobMatchScore !== undefined && activeData.atsResult?.jobMatchScore !== null ? `${activeData.atsResult.jobMatchScore}%` : '--'}
-              </span>
-              <span style={{ fontSize: '0.68rem', color: '#10b981', marginLeft: '0.5rem', fontWeight: '700' }}>
-                {activeData.atsResult?.jobMatchScore !== undefined && activeData.atsResult?.jobMatchScore !== null ? 'Target JD Match' : 'No JD Provided'}
-              </span>
-            </div>
-            <Sparkline color="#34d399" />
-          </div>
-        </div>
-
-        {/* Card 5: Average Readiness */}
-        <div className="metric-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(59,130,246,0.15)', color: '#60a5fa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>📈</div>
-            <span className="metric-title">ATS READINESS</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: '0.5rem' }}>
-            <div>
-              <span className="metric-value">
-                {activeData.atsResult?.resumeAtsScore !== undefined && activeData.atsResult?.resumeAtsScore !== null
-                  ? `${activeData.atsResult.resumeAtsScore}%`
-                  : 'Not Analyzed'}
-              </span>
-              <span style={{ fontSize: '0.68rem', color: activeData.atsResult?.resumeAtsScore ? '#10b981' : '#f59e0b', marginLeft: '0.5rem', fontWeight: '700' }}>
-                {activeData.atsResult?.resumeAtsScore ? 'ATS Ready' : 'Upload Resume'}
-              </span>
-            </div>
-            <Sparkline color="#60a5fa" />
-          </div>
-        </div>
-      </div>
-
-      {/* ─── 3. MAIN DASHBOARD CONTENT GRID ─────────────────────────── */}
-      <div className="dashboard-premium-grid">
-
-        {/* LEFT COLUMN: YOUR PLACEMENT JOURNEY & RESUME UPLOAD DROPZONE */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
-          
-          {/* YOUR PLACEMENT JOURNEY TIMELINE */}
-          <div className="card" style={{ padding: '2rem' }}>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: '900', color: '#ffffff', margin: '0 0 0.25rem 0', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-              YOUR PLACEMENT JOURNEY
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '0 0 2rem 0' }}>
-              Track your active progress metrics and milestones.
+            <p style={{ fontSize: '0.98rem', color: 'var(--text-secondary)', margin: '0 0 1.5rem 0', lineHeight: 1.6 }}>
+              Your DSA readiness is currently <strong style={{ color: '#f59e0b' }}>{dsaScore}%</strong>. Top tech hiring tests (Amazon, Google, Microsoft) weigh graph traversal, BFS/DFS, and dynamic programming heavily.
             </p>
 
-            {/* Stepper Line */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', margin: '0 1rem 1.5rem 1rem' }}>
-              <div style={{ position: 'absolute', top: '18px', left: 0, right: 0, height: '3px', background: 'linear-gradient(90deg, #10b981 40%, #2d3342 100%)', zIndex: 1 }} />
-              
-              {[
-                { label: 'Resume', icon: '📄', status: 'Completed', color: '#10b981' },
-                { label: 'Match', icon: '🎯', status: 'Completed', color: '#10b981' },
-                { label: 'Skills', icon: '⚡', status: 'Active', color: '#6366f1' },
-                { label: 'Roadmap', icon: '🗺️', status: 'Planned', color: '#8b5cf6' },
-                { label: 'Interview', icon: '🎤', status: 'Ready', color: '#ec4899' }
-              ].map((step, idx) => (
-                <div 
-                  key={idx}
-                  onClick={() => setShowAnalysisHub(true)}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', zIndex: 2, cursor: 'pointer' }}
-                >
-                  <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#161925', border: `2px solid ${step.color}`, color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: '900', boxShadow: `0 0 12px ${step.color}40` }}>
-                    {step.icon}
-                  </div>
-                  <span style={{ fontSize: '0.78rem', fontWeight: '800', color: '#ffffff' }}>{step.label}</span>
-                  <span style={{ fontSize: '0.65rem', color: step.color, fontWeight: '700' }}>{step.status}</span>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ background: '#0f1117', borderRadius: '14px', padding: '1rem 1.25rem', border: '1px solid #2d3342', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-              <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: '500' }}>
-                Complete each step to strengthen your profile and boost your placement readiness.
-              </span>
-              <button onClick={() => setShowAnalysisHub(true)} style={{ background: '#6366f1', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '0.45rem 1rem', fontSize: '0.78rem', fontWeight: '800', cursor: 'pointer' }}>
-                Open Hub ➔
-              </button>
+            {/* DSA Progress bar */}
+            <div style={{ background: 'var(--bg-surface)', padding: '1.2rem', borderRadius: '16px', border: '1px solid var(--border-default)', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: 800, marginBottom: '0.6rem' }}>
+                <span style={{ color: 'var(--text-primary)' }}>DSA Readiness Progress</span>
+                <span style={{ color: '#f59e0b' }}>{dsaScore}% / 100%</span>
+              </div>
+              <div style={{ width: '100%', height: '10px', background: 'var(--bg-overlay)', borderRadius: '99px', overflow: 'hidden' }}>
+                <div style={{ width: `${dsaScore}%`, height: '100%', background: 'linear-gradient(90deg, #f59e0b, #ef4444)', borderRadius: '99px', transition: 'width 1s ease' }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                <span>Solved: 50 / 120 target</span>
+                <span>Next up: Graph BFS & Matrix Traversal</span>
+              </div>
             </div>
           </div>
 
-          {/* INTEGRATED RESUME UPLOAD DROPZONE */}
-          <div 
-            onClick={triggerUpload}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            className="dropzone"
-            style={{
-              background: isDraggingOver ? 'rgba(99, 102, 241, 0.12)' : 'rgba(26, 29, 39, 0.5)',
-              border: `2px dashed ${isDraggingOver ? '#818cf8' : '#2d3342'}`,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '1rem'
-            }}
-          >
-            <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)', color: '#818cf8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem' }}>
-              ☁️
-            </div>
-            <div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: '900', color: '#ffffff', margin: '0 0 0.35rem 0' }}>
-                Upload or Drop Your Resume to Re-Analyze
-              </h3>
-              <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: 0, fontWeight: '500' }}>
-                Supports PDF, DOCX, and TXT • Automatic ATS & Skill Gap Parsing
-              </p>
-            </div>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <button
-              onClick={(e) => { e.stopPropagation(); triggerUpload(); }}
+              onClick={() => navigate('/roadmap')}
               className="btn btn-primary"
-              style={{ padding: '0.65rem 1.6rem', fontWeight: '800' }}
+              style={{ borderRadius: '14px', padding: '0.85rem 1.8rem', fontSize: '0.95rem' }}
             >
-              Select Resume File
+              Start Practice →
+            </button>
+            <button
+              onClick={() => navigate('/skill-map')}
+              className="btn btn-secondary"
+              style={{ borderRadius: '14px', padding: '0.85rem 1.4rem' }}
+            >
+              View Skill Gap Map
             </button>
           </div>
+        </div>
+      </div>
 
+      {/* ─── YOUR PLACEMENT JOURNEY (INTERACTIVE WORKFLOW STEPPER) ──────── */}
+      <div style={{
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border-default)',
+        borderRadius: 'var(--radius-xl)',
+        padding: '2.2rem 2rem',
+        boxShadow: 'var(--shadow-md)',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--indigo-light)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              STEP-BY-STEP ROADMAP
+            </span>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-primary)', margin: '0.2rem 0 0 0' }}>
+              Your Placement Journey 🚀
+            </h3>
+          </div>
+          <span className="badge badge-cyan" style={{ padding: '0.3rem 0.8rem' }}>4 of 6 Milestones Completed</span>
         </div>
 
-        {/* RIGHT COLUMN: ACTIVE ACTION & TOP SKILL GAPS */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
-          
-          {/* NEXT BEST ACTION CARD */}
-          <div className="card" style={{ padding: '1.75rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(99,102,241,0.15)', color: '#818cf8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', flexShrink: 0 }}>
-              ⚡
-            </div>
-            <div>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>NEXT BEST ACTION</span>
-              <h4 style={{ fontSize: '1.05rem', fontWeight: '900', color: '#ffffff', margin: '2px 0' }}>Review Week 1 System Design Roadmap</h4>
-              <span style={{ fontSize: '0.78rem', color: '#818cf8', fontWeight: '800', cursor: 'pointer' }} onClick={() => navigate('/roadmap')}>Start Learning Tasks ➔</span>
-            </div>
-          </div>
-
-          {/* TOP SKILL GAPS */}
-          <div className="card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: '900', color: '#ffffff', margin: 0, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                TOP SKILL GAPS TO CLOSE
-              </h3>
-              <span style={{ fontSize: '0.75rem', color: '#6366f1', fontWeight: '800', cursor: 'pointer' }} onClick={() => navigate('/skills')}>View All ➔</span>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-              {[
-                { name: 'System Design & Distributed Scalability', priority: 'Critical', color: '#ef4444' },
-                { name: 'Docker Compose & Kubernetes Deployments', priority: 'High', color: '#f59e0b' },
-                { name: 'Advanced PostgreSQL B-Tree Query Tuning', priority: 'Medium', color: '#3b82f6' }
-              ].map((gap, i) => (
-                <div key={i} style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '0.9rem 1.1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.88rem', fontWeight: '700', color: '#ffffff' }}>{gap.name}</span>
-                  <span style={{ fontSize: '0.7rem', background: `${gap.color}20`, color: gap.color, border: `1px solid ${gap.color}40`, padding: '0.2rem 0.6rem', borderRadius: '6px', fontWeight: '800' }}>
-                    {gap.priority}
-                  </span>
+        {/* Stepper Node List */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+          gap: '1rem',
+          position: 'relative',
+        }}>
+          {[
+            { step: '01', title: 'Student Profile', status: 'done', icon: '✓', desc: 'Target: SDE-1', path: '/dashboard' },
+            { step: '02', title: 'Resume AI', status: 'done', icon: '✓', desc: '84/100 ATS Score', path: '/resume' },
+            { step: '03', title: 'Skill Analysis', status: 'done', icon: '✓', desc: '68% Core Ready', path: '/skill-map' },
+            { step: '04', title: 'Job Matching', status: 'active', icon: '⚡', desc: '82% Amazon Match', path: '/job-matcher' },
+            { step: '05', title: 'Interview AI', status: 'upcoming', icon: '🎤', desc: '71/100 STAR Score', path: '/interview' },
+            { step: '06', title: 'Placement Ready', status: 'target', icon: '🎯', desc: 'Aim: 85%+ Ready', path: '/roadmap' },
+          ].map((item, idx) => {
+            const isDone = item.status === 'done';
+            const isActive = item.status === 'active';
+            return (
+              <div
+                key={item.step}
+                onClick={() => navigate(item.path)}
+                style={{
+                  background: isActive
+                    ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(6, 182, 212, 0.1))'
+                    : 'var(--bg-surface)',
+                  border: `1.5px solid ${isActive ? 'var(--indigo)' : isDone ? 'rgba(16, 185, 129, 0.4)' : 'var(--border-default)'}`,
+                  borderRadius: '18px',
+                  padding: '1.25rem 1rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.5rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.25s ease',
+                  boxShadow: isActive ? '0 8px 24px rgba(99, 102, 241, 0.25)' : 'none',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)' }}>{item.step}</span>
+                  <div style={{
+                    width: '26px', height: '26px', borderRadius: '50%',
+                    background: isDone ? 'rgba(16, 185, 129, 0.2)' : isActive ? 'var(--indigo)' : 'var(--bg-overlay)',
+                    color: isDone ? '#10b981' : '#ffffff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '0.78rem', fontWeight: 900,
+                  }}>
+                    {item.icon}
+                  </div>
                 </div>
-              ))}
+
+                <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.2rem' }}>
+                  {item.title}
+                </div>
+                <div style={{ fontSize: '0.72rem', color: isDone ? '#10b981' : isActive ? 'var(--indigo-light)' : 'var(--text-secondary)' }}>
+                  {item.desc}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ─── "EVERYTHING YOU NEED FOR PLACEMENT" — 6 LARGE COMMAND CARDS ─ */}
+      <div>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--indigo-light)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            COMMAND CENTER CAPABILITIES
+          </span>
+          <h2 style={{ fontSize: '1.9rem', fontWeight: 900, color: 'var(--text-primary)', margin: '0.25rem 0 0 0', letterSpacing: '-0.02em' }}>
+            Everything You Need For Placement 🌟
+          </h2>
+          <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', margin: '0.35rem 0 0 0' }}>
+            A unified suite of AI tools engineered specifically for engineering campus placement success.
+          </p>
+        </div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '1.35rem',
+        }}>
+          {/* Card 1: Resume AI */}
+          <div
+            onClick={() => navigate('/resume')}
+            className="card"
+            style={{ borderRadius: '22px', padding: '1.75rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '1rem' }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
+                <div style={{ width: '46px', height: '46px', borderRadius: '14px', background: 'rgba(99, 102, 241, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
+                  📄
+                </div>
+                <span className="badge badge-indigo">84 / 100</span>
+              </div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 0.35rem 0' }}>Resume AI</h3>
+              <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                ATS score analysis, keyword extraction, and measurable bullet point impact feedback.
+              </p>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', fontWeight: 700, color: 'var(--indigo-light)' }}>
+              <span>ATS Score: 92%</span>
+              <span>Open Analyzer →</span>
             </div>
           </div>
 
-        </div>
+          {/* Card 2: Job Matcher */}
+          <div
+            onClick={() => navigate('/job-matcher')}
+            className="card"
+            style={{ borderRadius: '22px', padding: '1.75rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '1rem' }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
+                <div style={{ width: '46px', height: '46px', borderRadius: '14px', background: 'rgba(16, 185, 129, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
+                  🎯
+                </div>
+                <span className="badge badge-green">82% Match</span>
+              </div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 0.35rem 0' }}>Job Matcher</h3>
+              <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                Benchmark your profile against Amazon SDE-1, TCS Digital, and Accenture requirements.
+              </p>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', fontWeight: 700, color: '#10b981' }}>
+              <span>14 / 17 Skills Matched</span>
+              <span>View Matches →</span>
+            </div>
+          </div>
 
+          {/* Card 3: Skill Map */}
+          <div
+            onClick={() => navigate('/skill-map')}
+            className="card"
+            style={{ borderRadius: '22px', padding: '1.75rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '1rem' }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
+                <div style={{ width: '46px', height: '46px', borderRadius: '14px', background: 'rgba(245, 158, 11, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
+                  🧠
+                </div>
+                <span className="badge badge-amber">68% Ready</span>
+              </div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 0.35rem 0' }}>Skill Map</h3>
+              <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                Hierarchical technical skill constellation across Backend, Frontend, and AI domains.
+              </p>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', fontWeight: 700, color: '#f59e0b' }}>
+              <span>Top Gap: System Design</span>
+              <span>Explore Graph →</span>
+            </div>
+          </div>
+
+          {/* Card 4: Interview AI */}
+          <div
+            onClick={() => navigate('/interview')}
+            className="card"
+            style={{ borderRadius: '22px', padding: '1.75rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '1rem' }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
+                <div style={{ width: '46px', height: '46px', borderRadius: '14px', background: 'rgba(244, 114, 182, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
+                  🎤
+                </div>
+                <span className="badge badge-pink">71/100 Score</span>
+              </div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 0.35rem 0' }}>Interview AI</h3>
+              <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                Simulate technical, HR behavioral, and project rounds with instant 5-metric scoring.
+              </p>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', fontWeight: 700, color: '#f472b6' }}>
+              <span>STAR Rubric Evaluator</span>
+              <span>Start Round →</span>
+            </div>
+          </div>
+
+          {/* Card 5: Roadmap */}
+          <div
+            onClick={() => navigate('/roadmap')}
+            className="card"
+            style={{ borderRadius: '22px', padding: '1.75rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '1rem' }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
+                <div style={{ width: '46px', height: '46px', borderRadius: '14px', background: 'rgba(139, 92, 246, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
+                  🗺
+                </div>
+                <span className="badge badge-violet">Phase 2 Active</span>
+              </div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 0.35rem 0' }}>Roadmap</h3>
+              <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                Visual 4-phase preparation journey connecting skill gaps directly to practice tasks.
+              </p>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', fontWeight: 700, color: '#a78bfa' }}>
+              <span>Phase 2: Skill Mastery</span>
+              <span>View Timeline →</span>
+            </div>
+          </div>
+
+          {/* Card 6: AI Mentor */}
+          <div
+            onClick={() => navigate('/mentor')}
+            className="card"
+            style={{ borderRadius: '22px', padding: '1.75rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '1rem' }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
+                <div style={{ width: '46px', height: '46px', borderRadius: '14px', background: 'rgba(6, 182, 212, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
+                  🤖
+                </div>
+                <span className="badge badge-cyan">3 Insights</span>
+              </div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 0.35rem 0' }}>AI Mentor</h3>
+              <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                Context-aware placement advisor providing daily customized recommendations.
+              </p>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', fontWeight: 700, color: '#06b6d4' }}>
+              <span>Context: Shiva / SDE-1</span>
+              <span>Talk to Mentor →</span>
+            </div>
+          </div>
+        </div>
       </div>
 
     </div>
   );
 }
-

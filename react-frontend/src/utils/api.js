@@ -96,10 +96,10 @@ export default {
     api.post('/research/company', { company_name }),
 
   // ── Chat / AI Mentor ─────────────────────────────────────────────
-  sendChatMessage: (content, session_id = 'default') =>
-    api.post('/chat/query', { content, session_id }),
+  sendChatMessage: (payload) =>
+    api.post('/chat/query', payload),
   getChatHistory: (session_id = 'default') =>
-    api.get(`/chat/history/${session_id}`),
+    Promise.resolve({ data: [] }),
 
   // ── Code Reviewer ────────────────────────────────────────────────
   analyzeCode: (code, filename = 'main.py') =>
