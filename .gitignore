@@ -2,6 +2,8 @@
 .env
 .env.local
 .env.*.local
+.env.development
+.env.production
 
 # Python
 __pycache__/
@@ -67,3 +69,5 @@ Thumbs.db
 # Temporary
 *.tmp
 *.temp
+.vercel
+.env*.local

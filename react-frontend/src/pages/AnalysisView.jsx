@@ -64,11 +64,11 @@ const AnalysisView = () => {
       
       {/* ─── TOP SUMMARY HEADER CARD ─────────────────────────────────── */}
       <div style={{
-        background: '#ffffff',
-        border: '1px solid #e2e8f0',
+        background: 'var(--card-bg)',
+        border: '1px solid var(--border-color)',
         borderRadius: '20px',
         padding: '1.75rem 2.25rem',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+        boxShadow: 'var(--shadow-lg)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -81,7 +81,7 @@ const AnalysisView = () => {
             width: '84px',
             height: '84px',
             borderRadius: '50%',
-            background: `conic-gradient(#4f46e5 ${currentScore}%, #f1f5f9 0)`,
+            background: `conic-gradient(var(--accent-primary) ${currentScore}%, #f1f5f9 0)`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -91,30 +91,30 @@ const AnalysisView = () => {
               width: '68px',
               height: '68px',
               borderRadius: '50%',
-              background: '#ffffff',
+              background: 'var(--card-bg)',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <span style={{ fontSize: '1.4rem', fontWeight: '900', color: '#0f172a', lineHeight: 1 }}>
+              <span style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--text-primary)', lineHeight: 1 }}>
                 {atsResult ? `${currentScore}%` : '0%'}
               </span>
-              <span style={{ fontSize: '0.6rem', color: '#64748b', fontWeight: '800', marginTop: '2px' }}>ATS SCORE</span>
+              <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: '800', marginTop: '2px' }}>ATS SCORE</span>
             </div>
           </div>
 
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-              <h2 style={{ fontSize: '1.6rem', fontWeight: '900', color: '#0f172a', margin: 0 }}>
+              <h2 style={{ fontSize: '1.6rem', fontWeight: '900', color: 'var(--text-primary)', margin: 0 }}>
                 {profile?.identity?.name || profile?.name || 'Candidate'}
               </h2>
-              <span style={{ background: 'rgba(79,70,229,0.1)', color: '#4f46e5', fontSize: '0.72rem', fontWeight: '800', padding: '0.25rem 0.75rem', borderRadius: '999px', letterSpacing: '0.04em' }}>
+              <span style={{ background: 'rgba(79,70,229,0.1)', color: 'var(--accent-primary)', fontSize: '0.72rem', fontWeight: '800', padding: '0.25rem 0.75rem', borderRadius: '999px', letterSpacing: '0.04em' }}>
                 {profile?.identity?.targetRole || 'Full Stack Software Engineer'}
               </span>
             </div>
-            <p style={{ fontSize: '0.88rem', color: '#64748b', margin: 0, fontWeight: '600' }}>
-              📄 Active File: <strong style={{ color: '#0f172a' }}>{atsResult?.fileName || 'No Resume Uploaded (Reset State)'}</strong>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0, fontWeight: '600' }}>
+              📄 Active File: <strong style={{ color: 'var(--text-primary)' }}>{atsResult?.fileName || 'No Resume Uploaded (Reset State)'}</strong>
             </p>
           </div>
         </div>
@@ -143,9 +143,9 @@ const AnalysisView = () => {
               navigate('/resume');
             }}
             style={{
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              color: '#0f172a',
+              background: 'var(--card-bg)',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-primary)',
               borderRadius: '12px',
               padding: '0.65rem 1.25rem',
               fontSize: '0.85rem',
@@ -160,8 +160,8 @@ const AnalysisView = () => {
           <button 
             onClick={() => navigate('/resume')}
             style={{
-              background: 'linear-gradient(135deg, #4f46e5, #6366f1)',
-              color: '#ffffff',
+              background: 'linear-gradient(135deg, var(--accent-primary), #6366f1)',
+              color: 'var(--card-bg)',
               border: 'none',
               borderRadius: '12px',
               padding: '0.65rem 1.4rem',
@@ -181,16 +181,16 @@ const AnalysisView = () => {
 
       {/* ─── UNANALYZED WARNING CALLOUT ─────────────────────────────── */}
       {!atsResult && (
-        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '1.25rem 1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '1.25rem 1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h4 style={{ fontSize: '1rem', fontWeight: '800', color: '#0f172a', margin: '0 0 0.2rem 0' }}>
+            <h4 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--text-primary)', margin: '0 0 0.2rem 0' }}>
               Session Reset — No Active Resume Analyzed
             </h4>
-            <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
               All scores are currently set to 0. Upload a resume file to generate real-time ATS sub-scores and skill gap analytics.
             </span>
           </div>
-          <button onClick={() => navigate('/resume')} style={{ background: '#4f46e5', color: '#ffffff', border: 'none', borderRadius: '10px', padding: '0.6rem 1.2rem', fontSize: '0.82rem', fontWeight: '800', cursor: 'pointer' }}>
+          <button onClick={() => navigate('/resume')} style={{ background: 'var(--accent-primary)', color: 'var(--card-bg)', border: 'none', borderRadius: '10px', padding: '0.6rem 1.2rem', fontSize: '0.82rem', fontWeight: '800', cursor: 'pointer' }}>
             ☁️ Upload Resume Now →
           </button>
         </div>
@@ -200,8 +200,8 @@ const AnalysisView = () => {
       <div style={{
         display: 'flex',
         gap: '0.5rem',
-        background: '#ffffff',
-        border: '1px solid #e2e8f0',
+        background: 'var(--card-bg)',
+        border: '1px solid var(--border-color)',
         borderRadius: '14px',
         padding: '0.4rem',
         boxShadow: '0 2px 10px rgba(0,0,0,0.02)'
@@ -221,8 +221,8 @@ const AnalysisView = () => {
               onClick={() => setActiveTab(tab.id)}
               style={{
                 flex: 1,
-                background: isSelected ? '#4f46e5' : 'transparent',
-                color: isSelected ? '#ffffff' : '#64748b',
+                background: isSelected ? 'var(--accent-primary)' : 'transparent',
+                color: isSelected ? 'var(--card-bg)' : 'var(--text-secondary)',
                 border: 'none',
                 borderRadius: '10px',
                 padding: '0.75rem 1rem',
@@ -256,12 +256,12 @@ const AnalysisView = () => {
               { label: 'Work & Project Experience', pct: workExperiencePct, color: '#06b6d4', icon: '💼' },
               { label: 'Formatting & Readability', pct: formattingPct, color: '#ec4899', icon: '💬' }
             ].map((sub, idx) => (
-              <div key={idx} style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '1.35rem 1.5rem', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+              <div key={idx} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '1.35rem 1.5rem', boxShadow: 'var(--shadow-md)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                  <span style={{ fontSize: '0.8rem', fontWeight: '800', color: '#64748b' }}>{sub.label}</span>
+                  <span style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--text-secondary)' }}>{sub.label}</span>
                   <span style={{ fontSize: '1.2rem' }}>{sub.icon}</span>
                 </div>
-                <div style={{ fontSize: '1.6rem', fontWeight: '900', color: '#0f172a', marginBottom: '0.5rem' }}>
+                <div style={{ fontSize: '1.6rem', fontWeight: '900', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
                   {atsResult ? `${sub.pct}%` : '0%'}
                 </div>
                 <div style={{ width: '100%', height: '6px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
@@ -274,10 +274,10 @@ const AnalysisView = () => {
           {/* Strong vs Weak Areas */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
             {/* Strong Areas */}
-            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '20px', padding: '1.75rem', boxShadow: '0 4px 20px rgba(0,0,0,0.04)' }}>
+            <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '20px', padding: '1.75rem', boxShadow: 'var(--shadow-lg)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
                 <span style={{ fontSize: '1.25rem' }}>✅</span>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: '900', color: '#0f172a', margin: 0 }}>Detected Competencies</h3>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: '900', color: 'var(--text-primary)', margin: 0 }}>Detected Competencies</h3>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {atsResult?.detectedSkills?.length ? (
@@ -287,7 +287,7 @@ const AnalysisView = () => {
                     </div>
                   ))
                 ) : (
-                  <div style={{ fontSize: '0.88rem', color: '#64748b', fontStyle: 'italic' }}>
+                  <div style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
                     No resume uploaded yet. Upload a file to detect strong skills.
                   </div>
                 )}
@@ -295,10 +295,10 @@ const AnalysisView = () => {
             </div>
 
             {/* Weak Areas */}
-            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '20px', padding: '1.75rem', boxShadow: '0 4px 20px rgba(0,0,0,0.04)' }}>
+            <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '20px', padding: '1.75rem', boxShadow: 'var(--shadow-lg)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
                 <span style={{ fontSize: '1.25rem' }}>⚠️</span>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: '900', color: '#0f172a', margin: 0 }}>Key Audit Warnings & Gaps</h3>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: '900', color: 'var(--text-primary)', margin: 0 }}>Key Audit Warnings & Gaps</h3>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {atsResult?.warnings?.length ? (
@@ -308,7 +308,7 @@ const AnalysisView = () => {
                     </div>
                   ))
                 ) : (
-                  <div style={{ fontSize: '0.88rem', color: '#64748b', fontStyle: 'italic' }}>
+                  <div style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
                     No resume uploaded yet. Upload a file to inspect warnings.
                   </div>
                 )}
@@ -320,28 +320,28 @@ const AnalysisView = () => {
 
       {/* 2. SKILLS TAB */}
       {activeTab === 'skills' && (
-        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '20px', padding: '2rem', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '20px', padding: '2rem', boxShadow: 'var(--shadow-lg)', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div>
-            <h3 style={{ fontSize: '1.3rem', fontWeight: '900', color: '#0f172a', margin: '0 0 0.25rem 0' }}>Competency & Skill Gap Analysis</h3>
-            <p style={{ fontSize: '0.88rem', color: '#64748b', margin: 0, fontWeight: '600' }}>Extracted candidate skills benchmarked against target role expectations.</p>
+            <h3 style={{ fontSize: '1.3rem', fontWeight: '900', color: 'var(--text-primary)', margin: '0 0 0.25rem 0' }}>Competency & Skill Gap Analysis</h3>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0, fontWeight: '600' }}>Extracted candidate skills benchmarked against target role expectations.</p>
           </div>
 
           {atsResult ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {(atsResult.detectedSkills || []).map((skill, idx) => (
-                <div key={idx} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1rem 1.25rem' }}>
+                <div key={idx} style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1rem 1.25rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <span style={{ fontWeight: '800', color: '#0f172a', fontSize: '0.95rem' }}>{skill}</span>
+                    <span style={{ fontWeight: '800', color: 'var(--text-primary)', fontSize: '0.95rem' }}>{skill}</span>
                     <span style={{ fontSize: '0.78rem', fontWeight: '800', color: '#10b981' }}>Detected • Proficient</span>
                   </div>
-                  <div style={{ width: '100%', height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ width: '90%', height: '100%', background: '#4f46e5', borderRadius: '4px' }} />
+                  <div style={{ width: '100%', height: '8px', background: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ width: '90%', height: '100%', background: 'var(--accent-primary)', borderRadius: '4px' }} />
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
               Upload your resume in the Resume Analyzer to inspect skill extraction.
             </div>
           )}
@@ -370,12 +370,12 @@ const AnalysisView = () => {
             const matchScore = atsResult ? Math.min(95, Math.max(45, Math.round((matched.length / job.requiredSkills.length) * 100))) : 0;
 
             return (
-              <div key={idx} style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '18px', padding: '1.5rem 1.75rem', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.25rem' }}>
+              <div key={idx} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '18px', padding: '1.5rem 1.75rem', boxShadow: 'var(--shadow-md)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.25rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
                   <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>{job.logo}</div>
                   <div>
-                    <h4 style={{ fontSize: '1.15rem', fontWeight: '900', color: '#0f172a', margin: '0 0 0.2rem 0' }}>{job.role}</h4>
-                    <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '700' }}>{job.company}</span>
+                    <h4 style={{ fontSize: '1.15rem', fontWeight: '900', color: 'var(--text-primary)', margin: '0 0 0.2rem 0' }}>{job.role}</h4>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '700' }}>{job.company}</span>
                   </div>
                 </div>
 
@@ -384,9 +384,9 @@ const AnalysisView = () => {
                     <div style={{ fontSize: '1.6rem', fontWeight: '900', color: getScoreColor(matchScore) }}>
                       {atsResult ? `${matchScore}%` : '0%'}
                     </div>
-                    <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: '800' }}>Match Fit</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '800' }}>Match Fit</span>
                   </div>
-                  <button onClick={() => navigate('/job-matcher')} style={{ background: '#4f46e5', color: '#ffffff', border: 'none', borderRadius: '10px', padding: '0.7rem 1.4rem', fontSize: '0.85rem', fontWeight: '800', cursor: 'pointer' }}>
+                  <button onClick={() => navigate('/job-matcher')} style={{ background: 'var(--accent-primary)', color: 'var(--card-bg)', border: 'none', borderRadius: '10px', padding: '0.7rem 1.4rem', fontSize: '0.85rem', fontWeight: '800', cursor: 'pointer' }}>
                     View Matcher ➔
                   </button>
                 </div>
@@ -403,16 +403,16 @@ const AnalysisView = () => {
             { week: 'Phase 1', title: 'Resume & Baseline Audit', focus: 'Upload resume and evaluate 8-category ATS score.', icon: '🗺️' },
             { week: 'Phase 2', title: 'Skill Gap & Technical Mastery', focus: 'Focus on missing skills: System Design & Kubernetes.', icon: '📦' }
           ].map((w, idx) => (
-            <div key={idx} style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '18px', padding: '1.5rem 1.75rem', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div key={idx} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '18px', padding: '1.5rem 1.75rem', boxShadow: 'var(--shadow-md)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
-                <span style={{ background: 'rgba(79,70,229,0.1)', color: '#4f46e5', fontSize: '0.72rem', fontWeight: '900', padding: '0.25rem 0.65rem', borderRadius: '999px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                <span style={{ background: 'rgba(79,70,229,0.1)', color: 'var(--accent-primary)', fontSize: '0.72rem', fontWeight: '900', padding: '0.25rem 0.65rem', borderRadius: '999px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                   {w.week}
                 </span>
-                <h4 style={{ fontSize: '1.25rem', fontWeight: '900', color: '#0f172a', margin: '0.75rem 0 0.35rem 0' }}>{w.title}</h4>
-                <p style={{ fontSize: '0.88rem', color: '#64748b', margin: 0, lineHeight: 1.5 }}>{w.focus}</p>
+                <h4 style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--text-primary)', margin: '0.75rem 0 0.35rem 0' }}>{w.title}</h4>
+                <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>{w.focus}</p>
               </div>
               <div style={{ marginTop: '1.25rem', paddingTop: '0.75rem', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <button onClick={() => navigate('/learning-roadmap')} style={{ background: 'none', border: 'none', color: '#4f46e5', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer' }}>Go to Roadmap ➔</button>
+                <button onClick={() => navigate('/learning-roadmap')} style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer' }}>Go to Roadmap ➔</button>
               </div>
             </div>
           ))}
@@ -421,11 +421,11 @@ const AnalysisView = () => {
 
       {/* 5. AI MENTOR TAB */}
       {activeTab === 'mentor' && (
-        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '20px', padding: '1.75rem', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', height: '520px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ paddingBottom: '0.75rem', borderBottom: '1px solid #e2e8f0', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '20px', padding: '1.75rem', boxShadow: 'var(--shadow-lg)', height: '520px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ paddingBottom: '0.75rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: '1.25rem' }}>🤖</span>
             <div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: '900', color: '#0f172a', margin: 0 }}>PlaceAI Mentor Chat</h3>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '900', color: 'var(--text-primary)', margin: 0 }}>PlaceAI Mentor Chat</h3>
               <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: '700' }}>● Online 24/7 Placement Q&A Assistant</span>
             </div>
           </div>
@@ -434,9 +434,9 @@ const AnalysisView = () => {
             {chatMessages.map(msg => (
               <div key={msg.id} style={{
                 alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                background: msg.sender === 'user' ? '#4f46e5' : '#f8fafc',
-                color: msg.sender === 'user' ? '#ffffff' : '#0f172a',
-                border: msg.sender === 'user' ? 'none' : '1px solid #e2e8f0',
+                background: msg.sender === 'user' ? 'var(--accent-primary)' : 'var(--bg-primary)',
+                color: msg.sender === 'user' ? 'var(--card-bg)' : 'var(--text-primary)',
+                border: msg.sender === 'user' ? 'none' : '1px solid var(--border-color)',
                 padding: '0.85rem 1.15rem',
                 borderRadius: msg.sender === 'user' ? '16px 16px 0 16px' : '16px 16px 16px 0',
                 maxWidth: '75%',
@@ -449,16 +449,16 @@ const AnalysisView = () => {
             ))}
           </div>
 
-          <div style={{ display: 'flex', gap: '0.65rem', marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid #e2e8f0' }}>
+          <div style={{ display: 'flex', gap: '0.65rem', marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)' }}>
             <input
               type="text"
               placeholder="Ask PlaceAI Mentor anything... (e.g. How do I improve ATS?)"
               value={chatInput}
               onChange={e => setChatInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSendChat()}
-              style={{ flex: 1, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '0.75rem 1rem', fontSize: '0.88rem', color: '#0f172a', outline: 'none' }}
+              style={{ flex: 1, background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '0.75rem 1rem', fontSize: '0.88rem', color: 'var(--text-primary)', outline: 'none' }}
             />
-            <button onClick={handleSendChat} style={{ background: '#4f46e5', color: '#ffffff', border: 'none', borderRadius: '12px', padding: '0 1.35rem', fontWeight: '800', cursor: 'pointer', fontSize: '0.9rem' }}>
+            <button onClick={handleSendChat} style={{ background: 'var(--accent-primary)', color: 'var(--card-bg)', border: 'none', borderRadius: '12px', padding: '0 1.35rem', fontWeight: '800', cursor: 'pointer', fontSize: '0.9rem' }}>
               Send ➔
             </button>
           </div>
@@ -469,22 +469,22 @@ const AnalysisView = () => {
       {activeTab === 'interview' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
           {[
-            { title: 'Technical Coding Round', icon: '💻', desc: 'Data Structures, React state management, and API design questions.', color: '#4f46e5' },
+            { title: 'Technical Coding Round', icon: '💻', desc: 'Data Structures, React state management, and API design questions.', color: 'var(--accent-primary)' },
             { title: 'Behavioral STAR Round', icon: '🗣️', desc: 'Leadership, teamwork, crisis resolution, and communication scenarios.', color: '#3b82f6' },
             { title: 'HR & Cultural Fit Round', icon: '🤝', desc: 'Salary negotiations, career goals, company values, and role expectation questions.', color: '#10b981' }
           ].map((round, idx) => (
-            <div key={idx} style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '20px', padding: '1.75rem', boxShadow: '0 4px 15px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div key={idx} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '20px', padding: '1.75rem', boxShadow: '0 4px 15px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: `${round.color}15`, color: round.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', marginBottom: '1rem' }}>{round.icon}</div>
-                <h4 style={{ fontSize: '1.2rem', fontWeight: '900', color: '#0f172a', margin: '0 0 0.5rem 0' }}>{round.title}</h4>
-                <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0, lineHeight: 1.5 }}>{round.desc}</p>
+                <h4 style={{ fontSize: '1.2rem', fontWeight: '900', color: 'var(--text-primary)', margin: '0 0 0.5rem 0' }}>{round.title}</h4>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>{round.desc}</p>
               </div>
               <button 
                 onClick={() => navigate('/assistant')}
                 style={{
                   marginTop: '1.5rem',
                   background: round.color,
-                  color: '#ffffff',
+                  color: 'var(--card-bg)',
                   border: 'none',
                   borderRadius: '12px',
                   padding: '0.75rem 1.25rem',
